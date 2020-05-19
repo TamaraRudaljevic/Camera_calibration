@@ -1,6 +1,7 @@
 from cv2 import cv2
 import numpy as np
 
+
 def val(i, j, H):
 
     return np.array([
@@ -12,32 +13,29 @@ def val(i, j, H):
         H[2, i] * H[2, j]
     ])
 
-def corner(img):
-    image = cv2.imread(img)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 390, 410)
-    lines = cv2.HoughLines(edges, 1, np.pi/180, 55)
-
-    h = []
-    v = []
-
-    for rho, theta in lines[0]:
-        if(abs(np.tan(theta)) > 1):
-            v.append([rho, theta])
-        else:
-            h.append([rho, theta])
+def corner(path, num):
+    imagelist=[]
+    c=0
+    corner_list=[]
+    for img in range(1,num+1):
+        image=cv2.imread(path+str(img)+'.jpg')
+        image1=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        edge=cv2.Canny(image1,390,410)
+        line = cv2.HoughLines(edge,1,np.pi/180,55)
+        
+        hl=[]
+        hv=[]
+        for rho,theta in line[0]:
+            
+            if (abs(np.tan(theta))>1):
+                hl.append([rho,theta])
+            else:
+                hv.append([rho,theta])
+        
+      
     
-    for line in lines:
-        rho, theta = line[0]
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a*rho
-        y0 = b*rho
-        x1 = int(x0 + 1000*(-b))
-        y1 = int(y0 + 1000*(a))
-        x2 = int(x0 - 1000*(-b))
-        y2 = int(y0 - 1000*(a))
-
+       
+                 
 
 # creating marix A
 # svd(A) => H
@@ -47,39 +45,53 @@ def Homography(p, world):
 
     # calculating matrix A from points and world points
     for p in range(len(point)):
-        p1 = world[p]
-        p2 = np.append(point[p], 1)
+        if len(world[p]) == 3:
+            p1 = world[p]
+            p2 = np.append(point[p], 1)
+        else:
+            p1 = np.append(a, 1)
+            p2 = np.append(point[p], 1)
+        
 
-        a1 = [-p2.item(2)*p1.item(0), -p2.item(2)*p1.item(1), -p2.item(2)*p1.item(2), 0, 0, 0, p2.item(0)*p1.item(0), p2.item(0)*p1.item(1), p2.item(0)*p1.item(2)]
-        a2 = [0, 0, 0, -p2.item(2) * p1.item(0), -p2.item(2) * p1.item(1), -p2.item(2) * p1.item(2), p2.item(1) * p1.item(0), p2.item(1) * p1.item(1), p2.item(1) * p1.item(2)]
+        a1 = [-p2[2]*p1[0], -p2[2]*p1[1], -p2[2]*p1[2], 0, 0, 0, p2[0]*p1[0], p2[0]*p1[1], p2[0]*p1[2]]
+        a2 = [0, 0, 0, -p2[2] * p1[0], -p2[2] * p1[1], -p2[2] * p1[2], p2[1] * p1[0], p2[1] * p1[1], p2[1] * p1[2]]
 
         a.append(a1)
         a.append(a2)
 
     A = np.matrix(a)
+    #print(A)
 
     u, s, v = np.linalg.svd(A)
 
     # last column is h
     h = v[8]
+    #print(h)
     H = np.reshape(h, (3,3))
+    #print(H)
 
     # normalization
     H = (H/H.item(8))
     return H
 
 def Intrinsic(point, world):
+    #print(point)
     list_v = []
     for p in point:
         h = Homography(p, world)
+        #print(h)
         v1 = val(0, 1, h)
         v2 = val(0, 0, h) - val(1, 1, h)
         list_v.append(v1)
         list_v.append(v2)
+        #print(list_v)
         
     V = np.matrix(list_v)
+    #print(V)
     u, s, v = np.linalg.svd(V)
+    #print(v)
     b = v[5]
+    #print(b)
 
     v0 = (b.item(1)*b.item(3) - b.item(0)*b.item(4))/ (b.item(0) * b.item(2) - b.item(1)**2)
     lam = b.item(5) - (b.item(3)**2 + v0*(b.item(1)*b.item(3) - b.item(0)*b.item(4))) / b.item(0)
@@ -114,4 +126,7 @@ def Extrinsic(intrinsic, cornerPoint, worldPoint):
     return rt
     
 
-image = "/home/tamarar/Desktop/Camera_calibration/calibration/calibration_test.png"
+
+image = '/home/tamarar/Desktop/Camera_calibration/calibration/calibration_test.jpg'
+dst = "/home/tamarar/Desktop/Camera_calibration/calibration/dst.png"
+#print(corners)
