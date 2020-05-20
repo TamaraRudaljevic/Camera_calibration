@@ -1,52 +1,73 @@
 from cv2 import cv2
 import numpy as np
 
-
+# matrix G
+# V = [G1
+#      G2
+#      ...
+#      Gn]
+# Vb = 0
 def val(i, j, H):
 
     return np.array([
-        H[0, i] * H[0, j],
-        H[0, i] * H[1, j] + H[1, i] * H[0, j],
-        H[1, i] * H[1, j],
-        H[2, i] * H[0, j] + H[0, i] * H[2, j],
-        H[2, i] * H[1, j] + H[1, i] * H[2, j],
-        H[2, i] * H[2, j]
+        H[0, i] * H[0, j], H[0, i] * H[1, j] + H[1, i] * H[0, j], H[1, i] * H[1, j], H[2, i] * H[0, j] + H[0, i] * H[2, j], H[2, i] * H[1, j] + H[1, i] * H[2, j], H[2, i] * H[2, j]
     ])
 
-def corner(path, num):
-    imagelist=[]
-    c=0
-    corner_list=[]
+# num => number of input images
+# finds corners on chessboard, 8x6
+def findCorners(num = 3):
+
     for img in range(1,num+1):
-        image=cv2.imread(path+str(img)+'.jpg')
-        image1=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-        edge=cv2.Canny(image1,390,410)
-        line = cv2.HoughLines(edge,1,np.pi/180,55)
-        
-        hl=[]
-        hv=[]
-        for rho,theta in line[0]:
-            
-            if (abs(np.tan(theta))>1):
-                hl.append([rho,theta])
+        corners = []
+        readpath = '/home/tamarar/Desktop/Camera_calibration/calibration/proba_image/Pic_'
+        image=cv2.imread(readpath + str(img) + '.png')
+        gray=cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        ret, corner = cv2.findChessboardCorners(gray, (8, 6), None)
+        corners.append(corner)
+    return corners
+          
+
+# find corners on any chessboards
+# num => number of input images
+def corners(num = 40):
+    for img in range(1, num+1):
+        readpath = '/home/tamarar/Desktop/Camera_calibration/calibration/images/Pic_'
+        image = cv2. imread(readpath + str(image) + '.jpg')
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        edge = cv2.Canny(gray, 390, 410)
+        lines = cv2.HoughLines(edge, 1, np.pi / 180, 55)
+
+        v = []
+        h = []
+        for rho, theta in lines[0]:
+            if(abs(np.tan(theta)) > 0):
+                v.append([rho, theta])
             else:
-                hv.append([rho,theta])
-        
-      
-    
-       
-                 
+                h.append([rho, theta])
+        lines = h + v
+
+        for rho, theta in lines:
+            a = np.cos(theta)
+            b = np.sin(theta)  
+            x0 = a * rho
+            y0 = b * rho   
+            x1 = int(x0 + 1000 * (-b))
+            y1 = int(y0 + 1000 * (a))
+            x2 = int(x0 - 1000 * (-b))
+            y2 = int(y0 - 1000 * (a))
+
+
 
 # creating marix A
 # svd(A) => H
-def Homography(p, world):
+def homography(imgPoint, objPoints):
     a = []
-    point = np.asarray(p)
+    point = np.asarray(imgPoint)
 
-    # calculating matrix A from points and world points
+    # calculating matrix A from img_point and obj_points
     for p in range(len(point)):
-        if len(world[p]) == 3:
-            p1 = world[p]
+        if len(objPoints[p]) == 3:
+            p1 = objPoints[p]
             p2 = np.append(point[p], 1)
         else:
             p1 = np.append(a, 1)
@@ -60,51 +81,53 @@ def Homography(p, world):
         a.append(a2)
 
     A = np.matrix(a)
-    #print(A)
 
     u, s, v = np.linalg.svd(A)
 
-    # last column is h
     h = v[8]
-    #print(h)
     H = np.reshape(h, (3,3))
-    #print(H)
 
     # normalization
     H = (H/H.item(8))
     return H
 
-def Intrinsic(point, world):
+
+# Intrinsic parameters => matrix k => focal lenght, principal points and skew parameter
+# alpha , beta => focal length
+# u0, v0 => principal points
+# gama => skew
+def intrinsic(imgPoints, objPoints):
     #print(point)
     list_v = []
-    for p in point:
-        h = Homography(p, world)
-        #print(h)
+    for p in imgPoints:
+        h = homography(p, objPoints)
+       
         v1 = val(0, 1, h)
         v2 = val(0, 0, h) - val(1, 1, h)
         list_v.append(v1)
         list_v.append(v2)
-        #print(list_v)
         
     V = np.matrix(list_v)
-    #print(V)
+    
     u, s, v = np.linalg.svd(V)
-    #print(v)
+   
     b = v[5]
-    #print(b)
-
+   
     v0 = (b.item(1)*b.item(3) - b.item(0)*b.item(4))/ (b.item(0) * b.item(2) - b.item(1)**2)
     lam = b.item(5) - (b.item(3)**2 + v0*(b.item(1)*b.item(3) - b.item(0)*b.item(4))) / b.item(0)
-    alpha = np.sqrt(lam/b.item(0))
+    alpha = np.sqrt(lam/(-b.item(0)))
     beta = np.sqrt(lam*b.item(0) / (b.item(0)*b.item(2) - b.item(1)**2))
     gama = -b.item(1)*alpha**2*beta/lam
-    u0 = gama*v0/beta - b.item(3)*alpha**2/gama
+    u0 = gama*v0/beta - b.item(3)*alpha**2/lam
 
     k = np.array([[alpha, gama, u0], [0, beta, v0], [0, 0, 1]])
     return k
 
-def Extrinsic(intrinsic, cornerPoint, worldPoint):
-    h = Homography(cornerPoint, worldPoint)
+
+# Extrinsic => camera rotation and translation matrices
+# Orientation between the camera and object 
+def extrinsic(intrinsic, imgPoint, objPoints):
+    h = homography(imgPoint, objPoints)
     h = np.linalg.inv(h)
     intrinsicsInv = np.linalg.inv(intrinsic)
 
@@ -126,7 +149,25 @@ def Extrinsic(intrinsic, cornerPoint, worldPoint):
     return rt
     
 
+def calibrate():
+    objPoints = []
+    for x in range(10):
+        for y in range(8):
+            objPoints.append([x,y,1])
 
-image = '/home/tamarar/Desktop/Camera_calibration/calibration/calibration_test.jpg'
-dst = "/home/tamarar/Desktop/Camera_calibration/calibration/dst.png"
-#print(corners)
+    imgPoints = findCorners()
+    #print(corners)
+    k = intrinsic(imgPoints, objPoints)
+    print("*******************************")
+    print("        **INTRINSIC** ")
+    print("k = ", k)
+    print("\n")
+    rt = extrinsic(k, imgPoints[0], objPoints)
+    print("*******************************")
+    print("        **EXTRINSIC** ")
+    print("rt = ", rt)
+    print("\n")
+    print("*******************************")
+
+
+calibrate()

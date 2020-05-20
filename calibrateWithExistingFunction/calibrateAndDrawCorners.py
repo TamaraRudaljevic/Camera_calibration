@@ -1,7 +1,7 @@
 import numpy as np
 from cv2 import cv2
 
-fname = 'D:/camera-calibration/calibrateWithExistingFunction/calibration_test.png'
+fname = '/home/tamarar/Desktop/Camera_calibration/calibrateWithExistingFunction/test_image.png'
 img = cv2.imread(fname)
 
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -28,7 +28,6 @@ if ret == True:
 # Calibrate camera
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-dst = cv2.undistort(img, mtx, dist, None, mtx)
+#dst = cv2.undistort(img, mtx, dist, None, mtx)
 
-cv2.imshow('DESTINATION', dst)
-cv2.waitKey()
+cv2.imwrite(dst, '/home/tamarar/Desktop/Camera_calibration/calibrateWithExistingFunction/test.png')
