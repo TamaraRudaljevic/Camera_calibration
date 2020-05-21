@@ -24,40 +24,32 @@ def findCorners(num = 3):
         gray=cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         ret, corner = cv2.findChessboardCorners(gray, (8, 6), None)
         corners.append(corner)
-    return corners
+    return corners, image
           
 
 # find corners on any chessboards
 # num => number of input images
 def corners(num = 40):
-    for img in range(1, num+1):
+    imagelist=[]
+    c=0
+    corner_list=[]
+    for img in range(1,num+1):
         readpath = '/home/tamarar/Desktop/Camera_calibration/calibration/images/Pic_'
-        image = cv2. imread(readpath + str(image) + '.jpg')
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        edge = cv2.Canny(gray, 390, 410)
-        lines = cv2.HoughLines(edge, 1, np.pi / 180, 55)
-
-        v = []
-        h = []
-        for rho, theta in lines[0]:
-            if(abs(np.tan(theta)) > 0):
-                v.append([rho, theta])
+        image=cv2.imread(readpath+str(img)+'.jpg')
+        image1=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        edge=cv2.Canny(image1,390,410)
+        line = cv2.HoughLines(edge,1,np.pi/180,55)
+        
+        hl=[]
+        hv=[]
+        for rho,theta in line[0]:
+            
+            if (abs(np.tan(theta))>1):
+                hl.append([rho,theta])
             else:
-                h.append([rho, theta])
-        lines = h + v
-
-        for rho, theta in lines:
-            a = np.cos(theta)
-            b = np.sin(theta)  
-            x0 = a * rho
-            y0 = b * rho   
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-
-
-
+                hv.append([rho,theta])
+       
+    return corners
 # creating marix A
 # svd(A) => H
 def homography(imgPoint, objPoints):
@@ -146,6 +138,9 @@ def extrinsic(intrinsic, imgPoint, objPoints):
     r = np.append(r1, r2, axis=1)
     r = np.append(r, r3, axis=1)
     rt = np.append(r, np.transpose(t), axis=1)
+    
+    
+    
     return rt
     
 
@@ -155,8 +150,8 @@ def calibrate():
         for y in range(8):
             objPoints.append([x,y,1])
 
+    #imgPoints = findCorners()
     imgPoints = findCorners()
-    #print(corners)
     k = intrinsic(imgPoints, objPoints)
     print("*******************************")
     print("        **INTRINSIC** ")
@@ -168,6 +163,7 @@ def calibrate():
     print("rt = ", rt)
     print("\n")
     print("*******************************")
+   
 
 
 calibrate()
