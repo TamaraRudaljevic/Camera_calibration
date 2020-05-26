@@ -20,7 +20,7 @@ def get_camera_images():
         yield (each, cv2.imread(each, 0))
 
 #########################################################################
-# Finding chessvoard corners
+# Finding chessboard corners
 def getChessboardCorners(images = None):
     objp = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
     objp[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
@@ -145,7 +145,7 @@ def compute_view_based_homography(correspondence, reproj = False):
             t = np.matmul(h, t1).reshape(1, 3)
             t = t/t[0][-1]
             formatstring = "Imp {0} | ObjP {1} | Tx {2}".format(image_points[i], object_points[i], t)
-            print(formatstring)
+            #print(formatstring)
             reproj_error += np.sum(np.abs(image_points[i] - t[0][:-1]))
         reproj_error = np.sqrt(reproj_error/N)/100.0
         print("Reprojection error : ", reproj_error)
@@ -219,6 +219,13 @@ def get_intrinsic_parameters(H_r):
     M = len(H_r)
     V = np.zeros((2*M, 6), np.float64)
 
+
+    # matrix G
+    # V = [G1
+    #      G2
+    #      ...
+    #      Gn]
+    # Vb = 0
     def v_pq(p, q, H):
         v = np.array([
                 H[0, p]*H[0, q],
@@ -259,16 +266,16 @@ def get_intrinsic_parameters(H_r):
             [0, beta, vc],
             [0, 0, 1.0],
         ])
-    print("*******************************")
-    print("        **INTRINSIC** ")
-    print("k = ", k)
-    print("\n")
+    # print("*******************************")
+    # print("        **INTRINSIC** ")
+    # print("k = ", k)
+    # print("\n")
     #print(A)
     return k
 
 
 #########################################################################
-def view(intrinsic, H_r):
+def extrinsicsCalculation(intrinsic, H_r):
     homography = H_r.reshape(3, 3)
     intrinsicsInv = np.linalg.inv(intrinsic)
 
@@ -300,14 +307,14 @@ def get_extrinsics_parameters(intrinsics, homographies):
 
     extrinsics = []
     for i in range(0, len(homographies)):
-        extrinsics.append(view(intrinsics, homographies[i]))
+        extrinsics.append(extrinsicsCalculation(intrinsics, homographies[i]))
 
     
-    print("*******************************")
-    print("        **EXTRINSIC** ")
-    print("extrinsics = ", extrinsics)
-    print("\n")
-    print("*******************************")
+    # print("*******************************")
+    # print("        **EXTRINSIC** ")
+    # print("extrinsics = ", extrinsics)
+    # print("\n")
+    # print("*******************************")
     return extrinsics
 
 #########################################################################

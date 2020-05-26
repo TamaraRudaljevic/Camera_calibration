@@ -3,11 +3,13 @@ from cv2 import cv2
 import NewCalibration as calib
 
 
-PATTERN_SIZE = (9, 6)
+# PATTERN_SIZE = (14, 2)
 SQUARE_SIZE = 1.0 
 
-model = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
-model[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
+# model = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
+# model[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
+model = np.zeros((54, 2), dtype=np.float64)
+#model[:, :2] = np.indices((14, 2)).T.reshape(-1, 2)
 model *= SQUARE_SIZE
 
 def to_homogeneous_3d(A):
@@ -58,6 +60,9 @@ def calculate_lens_distortion(model, all_data, K, extrinsic_matrices):
     """
     M = len(all_data)
     N = model.shape[0]
+    print("N* = ", N )
+    print("M* = ", M)
+    
 
     model = to_homogeneous_3d(model)
 
@@ -115,7 +120,7 @@ def calculate_lens_distortion(model, all_data, K, extrinsic_matrices):
     k = np.dot(D_inv, b)
 
     return k
-    print(k)
+    #print(k)
 
 
 ##########################################################
@@ -125,8 +130,8 @@ chessboard_correspondences = calib.getChessboardCorners(images=None)
 
 chessboard_correspondences_normalized = calib.normalize_points(chessboard_correspondences)
 
-#print("M = ", len(chessboard_correspondences_normalized), " view images")
-#print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
+print("M = ", len(chessboard_correspondences_normalized), " view images")
+print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
 
 H = []
 for correspondence in chessboard_correspondences_normalized:
@@ -139,5 +144,18 @@ for i in range(len(H)):
 
 K = calib.get_intrinsic_parameters(H_r)
 extrinsics = calib.get_extrinsics_parameters(K, H_r)
-print(chessboard_correspondences_normalized)
-calculate_lens_distortion(model, chessboard_correspondences_normalized, K, extrinsics)
+#print(chessboard_correspondences_normalized)
+#print(model)
+imageReal =[]
+for i in range(1, 14+1):
+    image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_' + str(i) + '.jpg')
+    imageReal.append(image)
+image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_1.jpg')
+#print(chessboard_correspondences_normalized)
+
+#image = image1.T.reshape(-1, 2)
+image = image1[:,:, ]
+print(image)
+
+
+calculate_lens_distortion(image, imageReal, K, extrinsics)

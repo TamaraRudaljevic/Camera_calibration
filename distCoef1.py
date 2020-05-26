@@ -1,4 +1,5 @@
 import numpy as np
+from cv2 import cv2
 import NewCalibration as calib
 
 
@@ -11,6 +12,7 @@ def estimate_lens_distortion(intrinsics, extrinsics, model, sensor):
     d = []
 
     l = 0
+    #print(sensor)
 
     for i in range(0, len(extrinsics)):
         for j in range(0, len(model)):
@@ -18,13 +20,16 @@ def estimate_lens_distortion(intrinsics, extrinsics, model, sensor):
             homog_model_coords = np.array([model[j][0], model[j][1], 0, 1])
             homog_coords = np.dot(extrinsics[i], homog_model_coords)
 
+            #print("homog_coords = ", homog_coords)
+            #print("homog_coords[-1] = ", homog_coords[-1])
             coords = homog_coords / homog_coords[-1]
-            print(coords)
             [x, y, hom] = coords
 
             r = np.sqrt(x*x + y*y)
 
             P = np.dot(intrinsics, homog_coords)
+            #print("P = ", P)
+            #print("P[2] = ", P[2])
             P = P / P[2]
 
             [u, v, trash] = P
@@ -57,18 +62,15 @@ def estimate_lens_distortion(intrinsics, extrinsics, model, sensor):
 
     return k
 
-###################################################
+######################################################
 
 chessboard_correspondences = calib.getChessboardCorners(images=None)
+      
+
 chessboard_correspondences_normalized = calib.normalize_points(chessboard_correspondences)
 
-
-PATTERN_SIZE = (9, 6)
-SQUARE_SIZE = 1.0 
-
-model = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
-model[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
-model *= SQUARE_SIZE
+#print("M = ", len(chessboard_correspondences_normalized), " view images")
+#print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
 
 H = []
 for correspondence in chessboard_correspondences_normalized:
@@ -82,4 +84,19 @@ for i in range(len(H)):
 k = calib.get_intrinsic_parameters(H_r)
 extrinsics = calib.get_extrinsics_parameters(k, H_r)
 
-estimate_lens_distortion(k, extrinsics, model, chessboard_correspondences_normalized)
+PATTERN_SIZE = (14, 2)
+SQUARE_SIZE = 1.0 
+
+objp = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
+objp[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
+objp *= SQUARE_SIZE
+#print(objp)
+#print(chessboard_correspondences)
+imageReal = []
+for i in range(1, 14+1):
+    image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_' + str(i) + '.jpg')
+    imageReal.append(image)
+
+image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_1.jpg')
+
+estimate_lens_distortion(k, extrinsics, image, imageReal)
