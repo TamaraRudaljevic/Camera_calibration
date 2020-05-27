@@ -2,7 +2,6 @@ import numpy as np
 from cv2 import cv2 
 import NewCalibration as calib
 
-
 # PATTERN_SIZE = (14, 2)
 SQUARE_SIZE = 1.0 
 
@@ -122,6 +121,57 @@ def calculate_lens_distortion(model, all_data, K, extrinsic_matrices):
     return k
     #print(k)
 
+#################################################
+def isRotationMatric(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype = R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    #return n < le-6
+
+def rotationMatrixToVector(R):
+    sy = np.sqrt(R[0, 0] * R[0,0] + R[1,0] * R[1,0])
+    #singular = sy < le-6
+
+    # if not singular:
+    #     x = np.arctan2(R[2, 1], R[2, 2])
+    #     y = np.arctan2(-R[2, 0], sy)
+    #     z = np.arctan2(R[1, 0], R[0, 0])
+    # else:
+    #     x = np.arctan2(-R[1, 2], R[1, 1])
+    #     y = np.arctan2(-R[2, 0], sy)
+    #     z = 0
+    x = np.arctan2(R[2, 1], R[2, 2])
+    y = np.arctan2(-R[2, 0], sy)
+    z = np.arctan2(R[1, 0], R[0, 0])
+
+    # x = np.arctan2(-R[1, 2], R[1, 1])
+    # y = np.arctan2(-R[2, 0], sy)
+    # z = 0
+
+    return np.array([x, y, z])
+#################################################
+def isclose(x, y, rtol=1.e-5, atol=1.e-8):
+    return abs(x-y) <= atol + rtol * abs(y)
+
+def eulerAngelsFromRotationMatrix(R):
+    phi = 0.0
+    if isclose(R[2,0], -1.0):
+        theta = np.pi/2.0
+        psi = pi.arctan2(R[0,1], R[0,2])
+    elif isclose(R[2,0], 1.0):
+        theta = -np.pi/2.0
+        psi = np.arctan2(-R[0,1], -R[0,2])
+    else:
+        theta = -np.arcsin(R[2,0])
+        cos_theta = np.cos(theta)
+        psi = np.arctan2(R[2,1]/cos_theta, R[2,2]/cos_theta)
+        phi = np.arctan2(R[1,0]/cos_theta, R[0,0]/cos_theta)
+
+    v = []
+    #v.append(psi, theta, phi)
+    return np.array([psi,theta, phi, 0.00590073, -0.00675606])
+
 
 ##########################################################
 
@@ -143,19 +193,35 @@ for i in range(len(H)):
     H_r.append(h_opt)
 
 K = calib.get_intrinsic_parameters(H_r)
-extrinsics = calib.get_extrinsics_parameters(K, H_r)
+extrinsics, rotation = calib.get_extrinsics_parameters(K, H_r)
+###############################################
 #print(chessboard_correspondences_normalized)
 #print(model)
 imageReal =[]
 for i in range(1, 14+1):
     image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_' + str(i) + '.jpg')
     imageReal.append(image)
-image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_1.jpg')
-#print(chessboard_correspondences_normalized)
+image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_4.png')
+###############################################
 
-#image = image1.T.reshape(-1, 2)
-image = image1[:,:, ]
-print(image)
+#calculate_lens_distortion(image, imageReal, K, extrinsics)
+# R = np.array(rotation)
+# print(R)
+# kVec = cv2.Rodrigues(R)
+# print(kVec)
 
+# print(rotation)
+# kvec = rotationMatrixToVector(rotation)
+# print(kvec)
+R = np.array(rotation)
+kvec = cv2.Rodrigues(R)
+#print(kvec)
+v = kvec[0]
+print(v)
 
-calculate_lens_distortion(image, imageReal, K, extrinsics)
+vector = eulerAngelsFromRotationMatrix(rotation)
+print(vector)
+#print(extrinsics)
+
+dst = cv2.undistort(image1, K, vector, None, K)
+cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test.jpg', dst)
