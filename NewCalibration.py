@@ -7,15 +7,15 @@ import numpy as np
 from cv2 import cv2
 from scipy import optimize as opt
 
-#DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_'
-DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_'
-PATTERN_SIZE = (8, 6)
+DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
+#DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_'
+PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
 #########################################################################
 # Loading images for calibration
 def get_camera_images():
-    images = [each for each in glob.glob(DATA_DIR + "*.png")]
+    images = [each for each in glob.glob(DATA_DIR + "*.jpg")]
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))
@@ -250,8 +250,8 @@ def get_intrinsic_parameters(H_r):
     # according to zhangs method
     vc = (b[1]*b[3] - b[0]*b[4])/(b[0]*b[2] - b[1]**2)
     l = b[5] - (b[3]**2 + vc*(b[1]*b[2] - b[0]*b[4]))/b[0]
-    alpha = np.sqrt((l/-(b[0])))
-    beta = np.sqrt(((l*b[0])/(-b[0]*b[2] - b[1]**2)))
+    alpha = np.sqrt((l/(b[0])))
+    beta = np.sqrt(((l*b[0])/(b[0]*b[2] - b[1]**2)))
     gamma = -1*((b[1])*(alpha**2) *(beta/l))
     uc = (gamma*vc/beta) - (b[3]*(alpha**2)/l)
 
@@ -267,10 +267,10 @@ def get_intrinsic_parameters(H_r):
             [0, beta, vc],
             [0, 0, 1.0],
         ])
-    # print("*******************************")
-    # print("        **INTRINSIC** ")
-    # print("k = ", k)
-    # print("\n")
+    print("*******************************")
+    print("        **INTRINSIC** ")
+    print("k = ", k)
+    print("\n")
     return k
 
 
@@ -310,10 +310,12 @@ def get_extrinsics_parameters(intrinsics, homographies):
 
     extrinsics = []
     rotation = []
+    rotation = []
     for i in range(0, len(homographies)):
         rt, r = extrinsicsCalculation(intrinsics, homographies[i])
         #rotation.append(r)
         extrinsics.append(rt)
+        rotation.append(r)
         #extrinsics.append(extrinsicsCalculation(intrinsics, homographies[i]))
 
     
@@ -322,14 +324,21 @@ def get_extrinsics_parameters(intrinsics, homographies):
     # print("extrinsics = ", extrinsics)
     # print("\n")
     # print("*******************************")
-    return extrinsics, r
+    return extrinsics, rotation
+
+#########################################################################
+
+
+
 
 #########################################################################
 
 chessboard_correspondences = getChessboardCorners(images=None)
+
       
 
 chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+#print(chessboard_correspondences_normalized)
 
 #print("M = ", len(chessboard_correspondences_normalized), " view images")
 #print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")

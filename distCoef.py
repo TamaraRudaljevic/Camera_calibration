@@ -59,8 +59,8 @@ def calculate_lens_distortion(model, all_data, K, extrinsic_matrices):
     """
     M = len(all_data)
     N = model.shape[0]
-    print("N* = ", N )
-    print("M* = ", M)
+    #print("N* = ", N )
+    #print("M* = ", M)
     
 
     model = to_homogeneous_3d(model)
@@ -154,23 +154,28 @@ def rotationMatrixToVector(R):
 def isclose(x, y, rtol=1.e-5, atol=1.e-8):
     return abs(x-y) <= atol + rtol * abs(y)
 
-def eulerAngelsFromRotationMatrix(R):
-    phi = 0.0
-    if isclose(R[2,0], -1.0):
-        theta = np.pi/2.0
-        psi = pi.arctan2(R[0,1], R[0,2])
-    elif isclose(R[2,0], 1.0):
-        theta = -np.pi/2.0
-        psi = np.arctan2(-R[0,1], -R[0,2])
-    else:
-        theta = -np.arcsin(R[2,0])
-        cos_theta = np.cos(theta)
-        psi = np.arctan2(R[2,1]/cos_theta, R[2,2]/cos_theta)
-        phi = np.arctan2(R[1,0]/cos_theta, R[0,0]/cos_theta)
+def eulerAngelsFromRotationMatrix(rotation):
+    vectorsRotation = []
+    for R in rotation:
 
-    v = []
-    #v.append(psi, theta, phi)
-    return np.array([psi,theta, phi, 0.00590073, -0.00675606])
+        phi = 0.0
+        if isclose(R[2,0], -1.0):
+            theta = np.pi/2.0
+            psi = np.arctan2(R[0,1], R[0,2])
+        elif isclose(R[2,0], 1.0):
+            theta = -np.pi/2.0
+            psi = np.arctan2(-R[0,1], -R[0,2])
+        else:
+            theta = -np.arcsin(R[2,0])
+            cos_theta = np.cos(theta)
+            psi = np.arctan2(R[2,1]/cos_theta, R[2,2]/cos_theta)
+            phi = np.arctan2(R[1,0]/cos_theta, R[0,0]/cos_theta)
+
+            vector = np.array([psi,theta, phi, 0.00590073, -0.00675606])
+            vectorsRotation.append(vector)
+
+    return vectorsRotation
+    #return np.array([psi,theta, phi, 0.00590073, -0.00675606])
 
 
 ##########################################################
@@ -180,8 +185,8 @@ chessboard_correspondences = calib.getChessboardCorners(images=None)
 
 chessboard_correspondences_normalized = calib.normalize_points(chessboard_correspondences)
 
-print("M = ", len(chessboard_correspondences_normalized), " view images")
-print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
+#print("M = ", len(chessboard_correspondences_normalized), " view images")
+#print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
 
 H = []
 for correspondence in chessboard_correspondences_normalized:
@@ -197,11 +202,11 @@ extrinsics, rotation = calib.get_extrinsics_parameters(K, H_r)
 ###############################################
 #print(chessboard_correspondences_normalized)
 #print(model)
-imageReal =[]
-for i in range(1, 14+1):
-    image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_' + str(i) + '.jpg')
-    imageReal.append(image)
-image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_4.png')
+# imageReal =[]
+# for i in range(1, 14+1):
+#     image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_' + str(i) + '.jpg')
+#     imageReal.append(image)
+
 ###############################################
 
 #calculate_lens_distortion(image, imageReal, K, extrinsics)
@@ -213,15 +218,38 @@ image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/i
 # print(rotation)
 # kvec = rotationMatrixToVector(rotation)
 # print(kvec)
-R = np.array(rotation)
-kvec = cv2.Rodrigues(R)
-#print(kvec)
-v = kvec[0]
-print(v)
+# R = np.array(rotation)
+# kvec = cv2.Rodrigues(R)
+# #print(kvec)
+# v = kvec[0]
+# print(v)
 
-vector = eulerAngelsFromRotationMatrix(rotation)
-print(vector)
-#print(extrinsics)
+# vectorRotation = eulerAngelsFromRotationMatrix(rotation)
+# for v in vectorRotation:
+#     print(v)
+#     print("\n")
+# #print(vectorRotation)
+# #print(extrinsics)
 
-dst = cv2.undistort(image1, K, vector, None, K)
-cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test.jpg', dst)
+# image1 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_1.png')
+# image2 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_2.png')
+# image3 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_3.png')
+# image4 = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/image_radial_distortion/Pic_4.png')
+
+# dst1 = cv2.undistort(image1, K, vectorRotation[0], None, K)
+# cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test1.jpg', dst1)
+
+# dst2 = cv2.undistort(image2, K, vectorRotation[1], None, K)
+# cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test2.jpg', dst2)
+
+# dst3 = cv2.undistort(image3, K, vectorRotation[2], None, K)
+# cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test3.jpg', dst3)
+
+# dst4 = cv2.undistort(image4, K, vectorRotation[3], None, K)
+# cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test4.jpg', dst4)
+
+# for r in rotation:
+#     vector = []
+#     v = cv2.Rodrigues(r, vector)
+#     print(vector)
+#     print("\n")
