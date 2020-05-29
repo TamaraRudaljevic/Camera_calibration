@@ -267,10 +267,10 @@ def get_intrinsic_parameters(H_r):
             [0, beta, vc],
             [0, 0, 1.0],
         ])
-    print("*******************************")
-    print("        **INTRINSIC** ")
-    print("k = ", k)
-    print("\n")
+    # print("*******************************")
+    # print("        **INTRINSIC** ")
+    # print("k = ", k)
+    # print("\n")
     return k
 
 
@@ -357,4 +357,3 @@ extrinsics, rotation = get_extrinsics_parameters(k, H_r)
 
 # print(rotation)
 # print(extrinsics)
-

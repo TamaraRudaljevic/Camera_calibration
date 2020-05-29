@@ -1,29 +1,26 @@
-from cv2 import cv2 
 import numpy as np 
-import NewCalibration as calib 
-import openCVCalib as calibration
+from cv2 import cv2
+#import NewCalibration as calib 
+#import openCVCalib as calibration
 
 
-K, dist = calibration.calibrate()
-print(dist)
-k = np.asarray([-0.20735375,  0.05202131, -0.01828434,  0.00591405, -0.0077002 ]);   
+#K, dist = calibration.calibrate()
+#print(dist)
+k = np.asarray([-0.23531794, -0.28631231, -0.00267382,  0.00164175,  0.56988632]);   
 
 
 # K = np.asarray([[ 1.05792775e+03, -1.60363681e+01,  7.29404410e+02],
 #     [ 0.00000000e+00,  1.03057080e+03,  4.02180795e+02],
 #     [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]); 
 
-K = np.asarray([[536.35697826,   0.,         625.23371273],
- [  0.,         531.82565659, 474.5924729 ],
- [  0.,           0.,           1.        ]]); 
+K = np.asarray([[1.13780233e+03, 0.00000000e+00, 6.46496944e+02],
+ [0.00000000e+00, 1.13435189e+03, 3.89553534e+02],
+ [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]); 
 
 #K = [1.05792775e+03, -1.60363681e+01,  7.29404410e+02, 0.00000000e+00,  1.03057080e+03,  4.02180795e+02, 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]
-print(K)
+#print(K)
 
 image_name = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/Pic_1.png'   
-
-
-##############################################
 
 def undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2, step_x = 0.01, image_name = image_name, 
                     K = K, k = k):
@@ -62,7 +59,7 @@ def undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2,
             #undistortion = False; # undistortion means that it can be undistorted by means of an invertible function
         
             #x_dist, y_dist = fisheye_distortion(x_p, y_p, k);
-            x_dist, y_dist = Dhane_undistortion(x_p, y_p, k = 1.25, f = 1.0)
+            x_dist, y_dist = undistortion(x_p, y_p, k)
                     
             # use the camera matrix to retrieve the image coordinate in pixels in the distorted image:
             v[0] = x_dist;
@@ -87,35 +84,25 @@ def undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2,
     cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/undistorted.png', Undistorted);
     #cv2.imshow('Undistorted', Undistorted);
 
-##########################################
-def fisheye_distortion(x_p, y_p, k): 
-    r = np.sqrt(x_p**2 + y_p**2);
-    theta = np.arctan(r);
-    theta_d = theta * (1 + k[0] * theta**2 + k[1] * theta**4 + k[2] * theta**6 + k[3] * theta**8);
-    x_dist = (theta_d / r) * x_p;
-    y_dist = (theta_d / r) * y_p;
-    
-    return x_dist, y_dist;
+def undistortion(x_dist, y_dist, distCoef):
+    k1 = distCoef[0]
+    k2 = distCoef[1]
+    p1 = distCoef[2]
+    p2 = distCoef[3]
+    k3 = distCoef[4]
 
-def Dhane_undistortion(x_d, y_d, k = 1.25, f = 1.0):
-    r = np.sqrt(x_d**2 + y_d**2);
-    inner_part = np.sin( np.arctan( r / f) ) * k;
-    if inner_part > 0.99:
-        return None, None;
-    R = f * np.tan( np.arcsin( inner_part ));
-    enlargement_factor = R/r;
-    x_p = enlargement_factor * x_d;
-    y_p = enlargement_factor * y_d;
-    
-    return x_p, y_p;
+    r = np.sqrt(x_dist**2 + y_dist**2);
 
+    # x = p2*(3*x_dist**2+y_dist**2) + x_dist*(k2*(x_dist**2+y_dist**2)**2 + k1*(x_dist**2+y_dist**2)+1) + 2*p1*x_dist*y_dist
+    # y = p1*(3*x_dist**2+3*y_dist**2) + y_dist*(k2*(x_dist**2+y_dist**2)**2 + k1*(x_dist**2+y_dist**2)+1) + 2*p2*x_dist*y_dist
+    # x = x_dist + (2*x_dist*y_dist + p2*(r**2 + 2*x_dist**2))
+    # y = y_dist + (p1*(r**2+ 2*y_dist**2)+2*p2*x_dist*y_dist)
+    x = x_dist*(1 + k1*r**2 + k2*r*r*r*r) + 2*p1*x_dist*y_dist + p2*(r**2 + 2*x_dist**2)
+    y = y_dist*(1 + k1*r**2 + k2*r*r*r*r) + p1*(r**2 + 2*y_dist**2) + 2*p2*x_dist*y_dist
 
-##########################################
-
-undistort_image();
+    return x, y
 
 
 
-
-
-    
+undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2, step_x = 0.01, image_name = image_name, 
+                    K = K, k = k)
