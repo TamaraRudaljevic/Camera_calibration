@@ -19,7 +19,8 @@ imgpoints = [] # 2d points in image plane.
 
 found = 0
 for img in range(1,13+1):  # Here, 10 can be changed to whatever number you like to choose
-    readpath = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/Pic_'
+    #readpath = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
+    readpath = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
     image=cv2.imread(readpath + str(img) + '.jpg')
     #print(images[im_i])
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -128,29 +129,31 @@ for img in range(1,13+1):  # Here, 10 can be changed to whatever number you like
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 print("mtx = ", mtx)
 print("\n")
+print("*****************")
+print("dist = ", dist)
+print("\n")
 # print("*****************")
-# print("dist = ", dist)
-# print("\n")
-# print("*****************")
-
-chessboard_correspondences = calib.getChessboardCorners(images=None)
+#############################
+# chessboard_correspondences = calib.getChessboardCorners(images=None)
       
 
-chessboard_correspondences_normalized = calib.normalize_points(chessboard_correspondences)
+# chessboard_correspondences_normalized = calib.normalize_points(chessboard_correspondences)
 
-#print("M = ", len(chessboard_correspondences_normalized), " view images")
-#print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
+# #print("M = ", len(chessboard_correspondences_normalized), " view images")
+# #print("N = ", len(chessboard_correspondences_normalized[0][0]),  " points per image")
 
-H = []
-for correspondence in chessboard_correspondences_normalized:
-    H.append(calib.compute_view_based_homography(correspondence, reproj=0))
+# H = []
+# for correspondence in chessboard_correspondences_normalized:
+#     H.append(calib.compute_view_based_homography(correspondence, reproj=0))
 
-H_r = []
-for i in range(len(H)):
-    h_opt = calib.refine_homographies(H[i], chessboard_correspondences_normalized[i], skip=False)
-    H_r.append(h_opt)
+# H_r = []
+# for i in range(len(H)):
+#     h_opt = calib.refine_homographies(H[i], chessboard_correspondences_normalized[i], skip=False)
+#     H_r.append(h_opt)
 
-k = calib.get_intrinsic_parameters(H_r)
+# k = calib.get_intrinsic_parameters(H_r)
+
+#####################################
 
 
 # transform the matrix and distortion coefficients to writable lists
@@ -200,7 +203,11 @@ k = calib.get_intrinsic_parameters(H_r)
 # dst4 = cv2.undistort(image4, k, dist, None, mtx)
 # cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/images_calibration/test4.jpg', dst4)
 
-for i in range(1, 14):
-    image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_' + str(i)+ '.jpg')
-    dst = cv2.undistort(image, mtx, dist, None, mtx)
-    cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Test_' + str(i) + '.jpg', dst)
+# for i in range(1, 14):
+#     image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_' + str(i)+ '.jpg')
+#     dst = cv2.undistort(image, mtx, dist, None, mtx)
+#     cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Test_' + str(i) + '.jpg', dst)
+
+image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/Rad_1.png')
+dst = cv2.undistort(image, mtx, dist, None, mtx)
+cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/test.png', dst)
