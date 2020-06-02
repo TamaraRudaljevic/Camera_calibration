@@ -7,15 +7,15 @@ import numpy as np
 from cv2 import cv2
 from scipy import optimize as opt
 
-DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
+DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/calibration/rad/Rad_'
 #DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/Rad_'
-PATTERN_SIZE = (9, 6)
+PATTERN_SIZE = (8, 6)
 SQUARE_SIZE = 1.0 
 
 #########################################################################
 # Loading images for calibration
 def get_camera_images():
-    images = [each for each in glob.glob(DATA_DIR + "*.jpg")]
+    images = [each for each in glob.glob(DATA_DIR + "*.png")]
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))

@@ -42,19 +42,8 @@ def undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2,
 
     v = np.zeros([3,1]);
 
-    # show the progress per 10 percent of the image:
-    n_steps = 10;
-    pct_per_step = 100 / n_steps;
-    progress_step = int(N/n_steps);
-
-    # for learning the inverse mapping:
-    Samples = [];
-    Targets = [];
 
     for i in range(N):
-
-        # if(np.mod(i, progress_step) == 0):
-        #     print('{} percent'.format(int(i/progress_step) * pct_per_step));
         
         for j in range(N):
             
@@ -92,35 +81,9 @@ def undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2,
 
     
     cv2.imwrite('/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/undistorted.jpg', Undistorted);
-    #cv2.imshow('Undistorted', Undistorted);
 
-def undistortion(x_dist, y_dist, distCoef):
-    k1 = distCoef[0]
-    k2 = distCoef[1]
-    p1 = distCoef[2]
-    p2 = distCoef[3]
-    k3 = distCoef[4]
 
-    r = np.sqrt(x_dist**2 + y_dist**2);
-
-    # x = p2*(3*x_dist**2+y_dist**2) + x_dist*(k2*(x_dist**2+y_dist**2)**2 + k1*(x_dist**2+y_dist**2)+1) + 2*p1*x_dist*y_dist
-    # y = p1*(3*x_dist**2+3*y_dist**2) + y_dist*(k2*(x_dist**2+y_dist**2)**2 + k1*(x_dist**2+y_dist**2)+1) + 2*p2*x_dist*y_dist
-    # x = x_dist + (2*x_dist*y_dist + p2*(r**2 + 2*x_dist**2))
-    # y = y_dist + (p1*(r**2+ 2*y_dist**2)+2*p2*x_dist*y_dist)
-    x = x_dist + x_dist*(k1*r**2 + k2*r**4 + k3*r**6) + (p1*(r**2 + 2*(x_dist**2)) + 2*p2*x_dist*y_dist)
-    y = y_dist + y_dist*(k1*r**2 + k2*r**4 + k3*r**6) + (p2*(r**2 + 2*(y_dist**2)) + 2*p2*x_dist*y_dist)
-    # x = x_dist + (2*p1*x_dist*y_dist + p2*(r**2 + 2*x_dist*x_dist))
-    # y = y_dist + (p1*(r**2 + 2*y_dist**2) + 2*p2*x_dist*y_dist)
-    #r = np.sqrt(x_p**2 + y_p**2);
-    # theta = np.arctan(r);
-    # theta_d = theta * (1 + k[0] * theta**2 + k[1] * theta**4 + k[2] * theta**6 + k[3] * theta**8);
-    # x_dist = (theta_d / r) * x_dist;
-    # y_dist = (theta_d / r) * y_dist;
-     
-
-    return x, y
-
-def undistort(x_dist, y_dist, distCoef, K):
+def undistortMapfisheye(K, distCoef, R, P, size): 
     k1 = distCoef[0]
     k2 = distCoef[1]
     p1 = distCoef[2]
@@ -131,44 +94,58 @@ def undistort(x_dist, y_dist, distCoef, K):
     u0 = K[0].item(2)
     fx = K[0].item(0)
     fy = K[1].item(1)
-    ifx = 1./fx 
-    ify = 1./fy
 
-    x0 = (x_dist - u0)*ifx
-    y0 = (y_dist - v0)*ify
+    iR = (P*R)
 
-    r = x_dist**2 + y_dist**2
-    icdist = 1
-    deltaX = 2*p1*x_dist*y_dist + p2 *(r + 2*(x_dist**2))
-    deltaY = p1* (r + 2*(y_dist**2)) + 2*p2*x_dist*y_dist
-    x = (x0 - deltaX)*icdist
-    y = (y0 - deltaY)*icdist
-   
-   
-   
-    #print("v0 = ", v0)
-    # du = x_dist - u0
-    # dv = y_dist - u0
+    print(iR[0].item(0))
 
-    #r = np.sqrt(du**2 + dv**2)
+    height, width = size[:2] # size = img.shape
 
-    # delta_u = du*(k1*r**2 + k2*r**4 + k3*r**6) + p1*(3*dv**2 + dv**2) + 2*p2*du*dv
-    # delta_v = dv*(k1*r**2 + k2*r**4 + k3*r**6) + 2*p1*du*dv + p2*(du**2 + dv**2)
+    for i in range(1, height+1):
+        _x = i*iR[0].item(1) + iR[0].item(2)
+        _y = i*iR[1].item(1) + iR[1].item(2)
+        _w = i*iR[2].item(1) + iR[2].item(2)
 
-    # x = x_dist - delta_u
-    # y = y_dist - delta_v
-    # x = x_dist + du*(k1*r**2 + k2*r**4 + k3*r**6) + (p1*(r**2 + 2*(du**2))) + 2*p2*du*dv
-    # y = y_dist + dv*(k1*r**2 + k2*r**4 + k3*r**6) + (2*p1*du*dv + p2*(r**2 + 2*(dv**2)))
+        for j in range(1, width+1):
+            x = _x/_w
+            y = _y/_w 
 
-    # x = u0 + du / (1 + k1*r**2 + k2*r**4 + k3*r**4)
-    # y = v0 + dv / (1 + k1*r**2 + k2*r**4 + k3*r**6)
+            r = np.sqrt(x**2 + y**2)
+            theta = np.arctan(r)
 
+            theta2 = theta**2
+            theta4 = theta2**2
+            theta6 = theta4**2
+            theta_d = theta * (1 + k1*theta2 + k2*theta4 + k3*theta6)
+
+            if r == 0:
+                scale = 1
+            else:
+                scale = theta_d/r
+            
+            u = fx*x*scale + u0
+            v = fy*y*scale + v0
+
+            _x += iR[0].item(0)
+            _y += iR[1].item(0)
+            _w += iR[2].item(0)
+
+
+
+def undistortImagefisheye(distorted, undistorted, K, distCoef, knew):
+    size = distorted.shape
+    R = np.eye(3)
+    #print(R)
+    map1 = np.zeros((distorted.shape[0], distorted.shape[1]))
+    map2 = np.zeros((distorted.shape[0], distorted.shape[1]))
+    undistortMapfisheye(K, distCoef, R , knew, size)
     
-    #print(x, y)
-    return x, y
+    cv2.remap(distorted, undistorted, map1, map2, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+
+def undistort():
+
+image = cv2.imread('/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_1.jpg')
+undistorted = []
+undistortImagefisheye(image, undistorted, K, k, K)
 
 
-
-
-undistort_image(min_y = -2, max_y = 2, step_y = 0.01, min_x = -2, max_x = 2, step_x = 0.01, image_name = image_name, 
-                    K = K, k = k)
