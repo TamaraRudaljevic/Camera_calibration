@@ -1,17 +1,15 @@
 #include <stdio.h>
 #include <vector>
 #include <opencv2/highgui.hpp>
-
+#include <string>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
+#include <iostream>
 
 using namespace std;
 using namespace cv;
 
-#define SQUARE_SIZE = 1.0
 
-vector<Vec3d> objectPoints(unsigned rows, unsigned cols);
-Mat normalizePoint(vector<vector<Vec2d>> chessboardCorrespondences, unsigned w, unsigned h);
-Mat denormalizeIntrinsics(const Mat &K, const Mat &N);
-Mat findIntrisicsParameters(const vector<Mat> &H);
-Mat findExtrinsics(const Mat &K, const Mat &H);
-Mat homographyDlt(vector<Vec2d> &chessboardCorrespondencesNormalize);
+Matx33d normalizePoint(vector<vector<Point2f>> point, int width, int height);
+vector<Point2f> findchessboardCorners();
 

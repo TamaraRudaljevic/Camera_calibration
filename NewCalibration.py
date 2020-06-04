@@ -7,15 +7,15 @@ import numpy as np
 from cv2 import cv2
 from scipy import optimize as opt
 
-DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/calibration/rad/Rad_'
+DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
 #DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/Rad_'
-PATTERN_SIZE = (8, 6)
+PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
 #########################################################################
 # Loading images for calibration
 def get_camera_images():
-    images = [each for each in glob.glob(DATA_DIR + "*.png")]
+    images = [each for each in glob.glob(DATA_DIR + "*.jpg")]
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))
@@ -34,6 +34,7 @@ def getChessboardCorners(images = None):
     ctr=0
     for (path, each) in get_camera_images(): 
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
+        print(corners)
         if ret:
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
@@ -44,7 +45,7 @@ def getChessboardCorners(images = None):
             print ("Error in detection points", ctr)
 
         ctr+=1
-
+    #print(correspondences)
     return correspondences
 
 #########################################################################
@@ -96,7 +97,9 @@ def normalize_points(chessboard_correspondences):
 
 #########################################################################
 def compute_view_based_homography(correspondence, reproj = False):
+    #print(correspondence)
     image_points = correspondence[0]
+    #print(image_points)
     object_points = correspondence[1]
     normalized_image_points = correspondence[2]
     normalized_object_points = correspondence[3]
@@ -236,6 +239,7 @@ def get_intrinsic_parameters(H_r):
                 H[2, p]*H[1, q] + H[1, p]*H[2, q],
                 H[2, p]*H[2, q]
             ])
+        #print("v = ", v)
         return v
 
     for i in range(M):
@@ -352,11 +356,13 @@ def get_extrinsics_parameters(intrinsics, homographies):
 #########################################################################
 
 chessboard_correspondences = getChessboardCorners(images=None)
-#print(chessboard_correspondences)
+
 
       
 
 chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+print(chessboard_correspondences_normalized)
+#print(chessboard_correspondences_normalized)
 #print(chessboard_correspondences_normalized)
 
 #print("M = ", len(chessboard_correspondences_normalized), " view images")

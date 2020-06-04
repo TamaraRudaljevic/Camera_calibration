@@ -1,33 +1,54 @@
 #include <iostream>
 #include <opencv2/highgui.hpp>
 #include <vector>
-//#include "calibration.hpp"
+#include "../include/calibration.hpp"
 
 using namespace std;
 using namespace cv;
 
+extern vector<vector<Point2f>> imagePoints;
+extern vector<vector<Point3f>> objectPoints;
+
 int main(int argc, char *argv[])
 {
-	cv::Mat image;
-	image = cv::imread("/home/tamarar/Desktop/Novo/Camera_calibration/image_radial_distortion/Pic_3.png", cv::IMREAD_COLOR);
-	//cout << "image shape: " << image << endl;
-
-	Vec2d h1 =1, h2 = 2, h3 = 3, h4 = 4, h5 =5, h6 = 6, h7 = 7, h8 = 8, h9 = 9;
-	vector<Vec2d> H;
-	H.push_back(h1);
-	H.push_back(h2);
-	H.push_back(h3);
-	H.push_back(h4);
-	H.push_back(h5);
-	H.push_back(h6);
-	H.push_back(h7);
-	H.push_back(h8);
-	H.push_back(h9);
-
-	for (int i = 0; i < H.size(); i++){
-		cout << H[i] << " ";
-	}
 	
+	//************************************************//
+
+	vector<Point2f> corners = findchessboardCorners();
+	cout << "Corners: " <<  corners << endl;
+	cout << "******************" << endl;
+
+	for (int i = 0; i < imagePoints.size(); i++)
+	{
+		for (int j = 0; j < imagePoints[i].size(); j++)
+		{
+			cout << imagePoints[i][j];
+		}
+	}
+
+	cout << "******************" << endl;
+
+	for (int i = 0; i < objectPoints.size(); i++)
+	{
+		for (int j = 0; j < objectPoints[i].size(); j++)
+		{
+			cout << objectPoints[i][j];
+		}
+	}
+
+	cout << "******************" << endl;
+
+	//************************************************//
+	//**********calibration with openCV***************//
+
+	Mat image = imread("/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_1.jpg");
+	Mat K, D;
+	vector<Mat> rvecs, tvecs;
+	calibrateCamera(objectPoints, imagePoints, image.size(), K, D, rvecs, tvecs);
+
+	cout << "Camera matrix, K = " << endl << K << endl;
+	cout << "Distortion coeff, dist = " << endl << D << endl;
+
 
 
 	

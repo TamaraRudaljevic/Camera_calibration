@@ -1,74 +1,83 @@
-#include "calibration.hpp"
+#include "../include/calibration.hpp"
 
-/*vector<Vec3d> get_vij(const Mat &h, unsigned i, unsigned j) {
-	return vector<Vec3d> {
-		h(0, i)*h(0, j), h(0, i)*h(1, j) + h(1, i)*h(0, j), h(1, i)*h(1, j),
-		h(2, i)*h(0, j) + h(0, i)*h(2, j), h(2, i)*h(1, j) + h(1, i)*h(2, j), h(2, i)*h(2, j)
-	};
-}
+#define SQUARE_SIZE = 1.0
+string readpath = "/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_";
+Size patternsize(9,6);
+vector<vector<Point2f>> imagePoints;
+vector<vector<Point3f>> objectPoints;
 
-Mat pack_v(const std::vector<cv::Mat> &Hs) {
-    Mat v = Mat::zeros(2*Hs.size(), 6, CV_8UC3);
-	//Mat v = cv::Mat::create(2*Hs.size(), 6);
 
-	for (unsigned i = 0; i < Hs.size(); ++i) {
+vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize)
+{
+	vector<Point3f> objectPoint;
 
-		auto h_r_1 = v.row(i*2);
-		auto h_r_2 = v.row(i*2 + 1);
-
-		auto v12 = get_vij(Hs[i], 0, 1);
-		auto v11 = get_vij(Hs[i], 0, 0);
-		auto v22 = get_vij(Hs[i], 1, 1);
-		auto v11_v22 = v11 - v22;
-
-		std::copy(v12.begin(),v12.end(),h_r_1.begin());
-		std::copy(v11_v22.begin(), v11_v22.end(), h_r_2.begin());
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			objectPoint.push_back(Point3f((float)j*squarSize, (float)i*squarSize, 0));
+		}
 	}
 
-	return v;
-}
-
-vector<Vec3d> solve_b(const cv::Mat &V) {
-
-	cv::Mat U, S, Vt;
-	SVD::compute(V, U, S, Vt);
-
-	return Vt.t().col(Vt.cols() - 1);
-}
-
-cv::Mat get_B_from_b(const vector<Vec2d> &b) {
-	return {
-		{b[0], b[1], b[3]},
-		{b[1], b[2], b[4]},
-		{b[3], b[4], b[5]}
-	};
+	return objectPoint;
 }
 
 
-vector<Vec3d> objectPoints(unsigned rows, unsigned cols)
+vector<Point2f> findchessboardCorners()
 {
+	vector<Point2f> corners;
+	vector<Point3f> objPoint = objectPoint(9, 6, 1.);
+	bool patternfound;
+	
+	for (int i = 1; i < 14; i++)
+	{
+		Mat image = imread(readpath + to_string(i) + ".jpg");
+		patternfound = findChessboardCorners(image, patternsize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
+		if (patternfound)
+		{
+			cout << "Corners found!" << endl;
+			imagePoints.push_back(corners);
+			objectPoints.push_back(objPoint);
+		}
+	}
 
+	return corners;
 }
 
-Mat normalizePoint(vector<vector<Vec2d>> chessboardCorrespondences, unsigned w, unsigned h)
+Matx33d normalize(vector<vector<Vec2d>> &point, int width, int height)
 {
+	/*float s_x = 2. / width;
+	float s_y = 2. / height;
+	float x0 = width / 2.;
+	float y0 = height / 2.;
+
+	for (int i = 0; i < point.size(); i++)
+	{
+		for (int j = 0; j < point[i].size(); j++)
+		{
+			point[i][j][0] = s_x * (point[i][j][0] - x0);
+			point[i][j][1] = s_y * (point[i][j][1] - x0);
+		}
+	}*/
+
+	Point2f sum1;
+	Point2f sum2;
+
+	for (int i = 0; i < point.size(); i++)
+	{
+		sum1 += point[i][0];
+		sum2 += point[i][1];
+		//points1.push_back(point[i][0]);
+		//points2.push_back(point[i][1]);
+	} 
+
+	Point2f avg_x = sum1 / float(point.size());
+	Point2f avg_y = sum2 / float(point.size());
+
+	//Point2f s_x = sqrt((point[0]));
+
+	
 
 }
 
-Mat denormalizeIntrinsics(const Mat &K, const Mat &N)
-{
 
-}
-
-
-Mat findExtrinsics(const Mat &K, const Mat &H)
-{
-
-}
-
-Mat homographyDlt(vector<Vec2d> &chessboardCorrespondencesNormalize)
-{
-
-}
-
-*/
