@@ -36,7 +36,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	cout << "******************" << endl;
+	cout << endl <<  "******************" << endl;
+
+	Matx33d M = getNormalizationMatrix(imagePoints);
+	cout << "M = " << M << endl;
+
+	cout << endl <<  "******************" << endl;
+
+
+	
 
 	//************************************************//
 	//**********calibration with openCV***************//
@@ -48,6 +56,12 @@ int main(int argc, char *argv[])
 
 	cout << "Camera matrix, K = " << endl << K << endl;
 	cout << "Distortion coeff, dist = " << endl << D << endl;
+
+	//************************************************//
+
+	
+
+	//************************************************//
 
 
 

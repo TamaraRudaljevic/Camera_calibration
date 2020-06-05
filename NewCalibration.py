@@ -40,6 +40,7 @@ def getChessboardCorners(images = None):
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 object_points.append(objp[:,:-1]) 
+                print(object_points)
                 correspondences.append([corners.astype(np.int), objp[:, :-1].astype(np.int)])
         else:
             print ("Error in detection points", ctr)
@@ -71,6 +72,7 @@ def normalize_points(chessboard_correspondences):
         imp, objp = chessboard_correspondences[i]
         N_x, N_x_inv = get_normalization_matrix(objp)
         N_u, N_u_inv = get_normalization_matrix(imp)
+        print(N_u)
         hom_imp = np.array([ [[each[0]], [each[1]], [1.0]] for each in imp])
         hom_objp = np.array([ [[each[0]], [each[1]], [1.0]] for each in objp])
 
@@ -361,7 +363,7 @@ chessboard_correspondences = getChessboardCorners(images=None)
       
 
 chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
-print(chessboard_correspondences_normalized)
+#print(chessboard_correspondences_normalized)
 #print(chessboard_correspondences_normalized)
 #print(chessboard_correspondences_normalized)
 
@@ -380,6 +382,7 @@ for i in range(len(H)):
 k = get_intrinsic_parameters(H_r)
 print(k)
 extrinsics, rotation = get_extrinsics_parameters(k, H_r)
+print(extrinsics[0])
 
 # print(rotation)
 # print(extrinsics)
