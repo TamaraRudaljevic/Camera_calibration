@@ -34,13 +34,13 @@ def getChessboardCorners(images = None):
     ctr=0
     for (path, each) in get_camera_images(): 
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
-        print(corners)
+        #print(corners)
         if ret:
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 object_points.append(objp[:,:-1]) 
-                print(object_points)
+                #print(object_points)
                 correspondences.append([corners.astype(np.int), objp[:, :-1].astype(np.int)])
         else:
             print ("Error in detection points", ctr)
@@ -70,19 +70,25 @@ def normalize_points(chessboard_correspondences):
     ret_correspondences = [] 
     for i in range(views):
         imp, objp = chessboard_correspondences[i]
+        #print(objp)
         N_x, N_x_inv = get_normalization_matrix(objp)
         N_u, N_u_inv = get_normalization_matrix(imp)
-        print(N_u)
+        # print(N_u)
         hom_imp = np.array([ [[each[0]], [each[1]], [1.0]] for each in imp])
+        #print(hom_imp)
         hom_objp = np.array([ [[each[0]], [each[1]], [1.0]] for each in objp])
-
+        #print(hom_objp)
 
         normalized_hom_imp = hom_imp
         normalized_hom_objp = hom_objp
+        #print(normalized_hom_objp)
 
         for i in range(normalized_hom_objp.shape[0]):
             n_o = np.matmul(N_x,normalized_hom_objp[i])
+            #print(normalized_hom_objp)
             normalized_hom_objp[i] = n_o/n_o[-1]
+            #for i in n_o:
+                #print(n_o[i])
             
             n_u = np.matmul(N_u,normalized_hom_imp[i])
             normalized_hom_imp[i] = n_u/n_u[-1]
@@ -106,6 +112,7 @@ def compute_view_based_homography(correspondence, reproj = False):
     normalized_image_points = correspondence[2]
     normalized_object_points = correspondence[3]
     N_u = correspondence[4]
+    #print(normalized_object_points)
     N_x = correspondence[5]
     N_u_inv = correspondence[6]
     N_x_inv = correspondence[7]
@@ -132,6 +139,8 @@ def compute_view_based_homography(correspondence, reproj = False):
 
 
     u, s, vh = np.linalg.svd(M)
+    print(vh)
+    print("*******************")
 
 
     h_norm = vh[np.argmin(s)]
@@ -380,9 +389,9 @@ for i in range(len(H)):
     H_r.append(h_opt)
 
 k = get_intrinsic_parameters(H_r)
-print(k)
+#print(k)
 extrinsics, rotation = get_extrinsics_parameters(k, H_r)
-print(extrinsics[0])
+#print(extrinsics[0])
 
 # print(rotation)
 # print(extrinsics)

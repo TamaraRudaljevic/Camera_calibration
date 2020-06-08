@@ -15,8 +15,8 @@ int main(int argc, char *argv[])
 	//************************************************//
 
 	vector<Point2f> corners = findchessboardCorners();
-	cout << "Corners: " <<  corners << endl;
-	cout << "******************" << endl;
+	//cout << "Corners: " <<  corners << endl;
+	// cout << "******************" << endl;
 
 	for (int i = 0; i < imagePoints.size(); i++)
 	{
@@ -38,10 +38,9 @@ int main(int argc, char *argv[])
 
 	cout << endl <<  "******************" << endl;
 
-	Matx33d M = getNormalizationMatrix(imagePoints);
-	cout << "M = " << M << endl;
 
-	cout << endl <<  "******************" << endl;
+	
+	
 
 
 	
@@ -49,13 +48,13 @@ int main(int argc, char *argv[])
 	//************************************************//
 	//**********calibration with openCV***************//
 
-	Mat image = imread("/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_1.jpg");
-	Mat K, D;
-	vector<Mat> rvecs, tvecs;
-	calibrateCamera(objectPoints, imagePoints, image.size(), K, D, rvecs, tvecs);
+	// Mat image = imread("/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_1.jpg");
+	// Mat K, D;
+	// vector<Mat> rvecs, tvecs;
+	// calibrateCamera(objectPoints, imagePoints, image.size(), K, D, rvecs, tvecs);
 
-	cout << "Camera matrix, K = " << endl << K << endl;
-	cout << "Distortion coeff, dist = " << endl << D << endl;
+	//cout << "Camera matrix, K = " << endl << K << endl;
+	//cout << "Distortion coeff, dist = " << endl << D << endl;
 
 	//************************************************//
 
