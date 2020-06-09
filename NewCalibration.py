@@ -137,9 +137,11 @@ def compute_view_based_homography(correspondence, reproj = False):
         M[2*i] = row_1
         M[(2*i) + 1] = row_2
 
+        print("M = ", M)
+
 
     u, s, vh = np.linalg.svd(M)
-    print(vh)
+    #print(vh)
     print("*******************")
 
 
@@ -258,6 +260,10 @@ def get_intrinsic_parameters(H_r):
         V[2*i] = v_pq(p=0, q=1, H=H)
         V[2*i + 1] = np.subtract(v_pq(p=0, q=0, H=H), v_pq(p=1, q=1, H=H))
 
+    print("##################")
+    print(V[0])
+    print("##################")
+
     # solve V.b = 0
     u, s, vh = np.linalg.svd(V)
     b = vh[np.argmin(s)]
@@ -310,9 +316,18 @@ def get_intrinsic_parameters(H_r):
 #########################################################################
 def extrinsicsCalculation(intrinsic, H_r):
     homography = H_r.reshape(3, 3)
+    #print(homography)
     intrinsicsInv = np.linalg.inv(intrinsic)
+    print("\n")
+    print("intrinsicsInv = ", intrinsicsInv)
+    print("\n")
+    print("intrinsic = ", intrinsic)
+    print("\n")
 
     h1 = homography[:, 0]
+    #print("*-**********************")
+    print("h1 = ", h1)
+    #print("*-**********************")
     h2 = homography[:, 1]
     h3 = homography[:, 2]
 
@@ -345,6 +360,7 @@ def get_extrinsics_parameters(intrinsics, homographies):
     rotation = []
     rotation = []
     for i in range(0, len(homographies)):
+        print("h [i] = ", homographies[i] )
         rt, r = extrinsicsCalculation(intrinsics, homographies[i])
         #rotation.append(r)
         extrinsics.append(rt)

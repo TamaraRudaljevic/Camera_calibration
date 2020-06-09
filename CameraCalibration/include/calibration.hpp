@@ -11,9 +11,12 @@ using namespace std;
 using namespace cv;
 
 
-vector<Point2f> objectPoint(unsigned row, unsigned col, float squarSize);
+vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize);
 vector<Point2f> findchessboardCorners();
-Matx33d normalizePoints(vector<vector<Point2f>>& corners);
-Matx33d getIntrinsicParameters(vector<Matx33d> H);
-Matx33d extrinsicCalculation(Matx33d intrinsic, Matx33d H);
-vector<Matx34d> getExtrinsicsParameters(Matx33d intrinsic, vector<Matx33d> homographies);
+Mat homographyDltSimEtimation(vector<Point2f>& vector);
+void homographyDltNormalize(vector<Point2f>& point, Mat& S);
+Mat homographyDlt();
+int argmin(vector<float>& vector);
+Mat getIntrinsicParameters(vector<Mat> H_r);
+Mat extrinsicsCalculation(Mat& intrinsics, Mat& H_r);
+vector<Mat> getExtrinsicsParameters(Mat& intrinsics, vector<Mat>& homographies);

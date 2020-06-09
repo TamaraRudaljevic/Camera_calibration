@@ -15,12 +15,10 @@ int main(int argc, char *argv[])
 	//************************************************//
 
 	vector<Point2f> corners = findchessboardCorners();
-	//cout << "Corners: " <<  corners << endl;
-	// cout << "******************" << endl;
 
-	for (int i = 0; i < imagePoints.size(); i++)
+	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
-		for (int j = 0; j < imagePoints[i].size(); j++)
+		for (unsigned j = 0; j < imagePoints[i].size(); j++)
 		{
 			cout << imagePoints[i][j];
 		}
@@ -28,17 +26,15 @@ int main(int argc, char *argv[])
 
 	cout << "******************" << endl;
 
-	for (int i = 0; i < objectPoints.size(); i++)
+	for (unsigned i = 0; i < objectPoints.size(); i++)
 	{
-		for (int j = 0; j < objectPoints[i].size(); j++)
+		for (unsigned j = 0; j < objectPoints[i].size(); j++)
 		{
 			cout << objectPoints[i][j];
 		}
 	}
 
 	cout << endl <<  "******************" << endl;
-
-
 	
 	
 
