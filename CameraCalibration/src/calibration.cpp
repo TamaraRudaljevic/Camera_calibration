@@ -6,8 +6,7 @@ Size patternsize(9,6);
 vector<Point2f> imagePoints;
 vector<Point3f> objectPoints;
 vector<vector<double>> tmp;
-Mat n_x, n_u = Mat(3, 3, CV_64FC1);
-Mat n_x_inv, n_u_inv = Mat(3, 3, CV_64FC1);
+Mat nImg, nObj;
 Mat K;
 vector<Mat> extrinsic;
 
@@ -57,86 +56,214 @@ vector<Point2f> findchessboardCorners()
 		if (patternfound)
 		{
 			cout << "Corners found!" << endl;
-			imagePoints = corners;
-			objectPoints = objPoint;
+			imagePoints.insert(imagePoints.end(), corners.begin(), corners.end());
+			objectPoints.insert(objectPoints.end(), objPoint.begin(), objPoint.end());
+			//imagePoints.push_back(corners);
+			//objectPoints.push_back(objPoint);
 		}
 	}
 
 	return corners;
 }
 
-// //****************************************************//
+//**********************HOMOGRAPHY******************************//
+
+//####################################################################//
+Point2f meanImagePoints(vector<Point2f>& vector)
+{
+	float meanX, meanY = 0;
+	Point2f mean;
+	for (unsigned i = 0; i < vector.size(); i++)
+	{
+		meanX += vector[i].x;
+		meanY += vector[i].y;
+	}
+
+	meanX /= vector.size();
+	meanY /= vector.size();
+	mean.x = meanX;
+	mean.y = meanY;
+	return mean;
+}
+
+Point2f varianceImagePoints(vector<Point2f>& vector, float xMean, float yMean)
+{
+	Point2f var;
+	for (unsigned i = 0; i < vector.size(); i++)
+	{
+		var.x += (vector[i].x - xMean) * (vector[i].x - xMean);
+		var.y += (vector[i].y - yMean) * (vector[i].y - yMean);
+	}
+
+	var.x /= vector.size();
+	var.x /= vector.size();
+	return var;
+}
+
+Point3f varianceObjectPoints(vector<Point3f>& vector, float xMean, float yMean)
+{
+	Point3f var;
+	for (unsigned i = 0; i < vector.size(); i++)
+	{
+		var.x += (vector[i].x - xMean) * (vector[i].x - xMean);
+		var.y += (vector[i].y - yMean) * (vector[i].y - yMean);
+	}
+
+	var.x /= vector.size();
+	var.x /= vector.size();
+	return var;
+}
+
+Point3f meanObjectPoints(vector<Point3f>& vector)
+{
+	float meanX, meanY = 0;
+	Point3f mean;
+	for (unsigned i = 0; i < vector.size(); i++)
+	{
+		meanX += vector[i].x;
+		meanY += vector[i].y;
+	}
+
+	meanX /= vector.size();
+	meanY /= vector.size();
+	mean.x = meanX;
+	mean.y = meanY;
+	return mean;
+}
+
+//####################################################################//
 
 Mat homographyDltSimEtimationImagePoints(vector<Point2f>& vector)
 {
-	float xMean, yMean, xDev, yDev, xVar, yVar, s_x, s_y;
-	meanStdDev(vector[0], Scalar(xMean), Scalar(xDev));
-	meanStdDev(vector[1], Scalar(yMean), Scalar(yDev));
-	xVar = xDev*xDev;
-	yVar = yDev*yDev;
+	cout << "ESTIMATION IMAGE POINTS" << endl;
+	Mat matrix = Mat::eye(3, 3, CV_64FC1);
+	Point2f center(0, 0);
+	Mat S;
+	for (auto veec : vector)
+	{
+		center.x += veec.x;
+		center.y += veec.y;
+	}
 
-	sqrt(2./xVar, Scalar(s_x));
-	sqrt(2./yVar, Scalar(s_y));
+	center.x /= vector.size(); // x mean
+	center.y /= vector.size(); // y mean
 
+	float sum = 0;
 
-	n_u.row(0).col(0) = s_x;
-	n_u.row(0).col(1) = 0;
-	n_u.row(0).col(2) = -s_x*xMean;
-	n_u.row(1).col(0) = 0;
-	n_u.row(1).col(1) = s_y;
-	n_u.row(1).col(2) = -s_y*yMean;
-	n_u.row(2).col(0) = 0;
-	n_u.row(2).col(1) = 0;
-	n_u.row(2).col(2) = 1;
+	for (auto veec : vector)
+	{
+		double tmp = norm(veec - center);
+		sum += tmp;
+	}
+	center *= -1;
 
-	return n_u;
-
-	// n_u_inv.row(0).col(0) = 1./s_x;
-	// n_u_inv.row(0).col(1) = 0;
-	// n_u_inv.row(0).col(1) = xMean;
-	// n_u_inv.row(0).col(1) = 0;
-	// n_u_inv.row(0).col(1) = 1./s_y;
-	// n_u_inv.row(0).col(1) = yMean;
-	// n_u_inv.row(0).col(1) = 0;
-	// n_u_inv.row(0).col(1) = 0;
-	// n_u_inv.row(0).col(1) = 1;
+	float scale_b = sqrt(2.) / (sum / vector.size());
 	
+	matrix.row(0).col(0) = scale_b;
+	matrix.row(1).col(1) = scale_b;
+	matrix.row(0).col(2) = center.x;
+	matrix.row(1).col(2) = center.y;
+	return matrix;
+	// cout << "ESTIMATION IMAGE POINTS" << endl;
+	// float xMean, yMean, xVar, yVar, s_x = 0, s_y = 0;
+	// Point2f xyMean = meanImagePoints(vector);
+	// xMean = xyMean.x;
+	// yMean = xyMean.y;
+	// Point2f xyVariance = varianceImagePoints(vector, xMean, yMean);
+	// xVar = xyVariance.x;
+	// yVar = xyVariance.y;
+	// //meanStdDev(vectorX, xMean, xDev);
+	// //meanStdDev(vectorY, yMean, yDev);
+	// //xVar = xDev*xDev;
+	// //yVar = yDev*yDev;
 
+	// sqrt(2./xVar, Scalar(s_x));
+	// sqrt(2./yVar, Scalar(s_y));
+
+
+	// nImg.row(0).col(0) = s_x;
+	// nImg.row(0).col(1) = 0;
+	// nImg.row(0).col(2) = -s_x*xMean;
+	// nImg.row(1).col(0) = 0;
+	// nImg.row(1).col(1) = s_y;
+	// nImg.row(1).col(2) = -s_y*yMean;
+	// nImg.row(2).col(0) = 0;
+	// nImg.row(2).col(1) = 0;
+	// nImg.row(2).col(2) = 1;
+
+	// return nImg;
 }
+
 
 Mat homographyDltSimEtimationObjectPoints(vector<Point3f>& vector)
 {
-	float xMean, yMean, xDev, yDev, xVar, yVar, s_x, s_y;
-	meanStdDev(vector[0], Scalar(xMean), Scalar(xDev));
-	meanStdDev(vector[1], Scalar(yMean), Scalar(yDev));
-	xVar = xDev*xDev;
-	yVar = yDev*yDev;
+	cout << "ESTIMATION OBJECT POINTS" << endl;
+	Mat matrix = Mat::eye(3, 3, CV_64FC1);
+	Point3f center(0, 0, 0);
+	Mat S;
+	for (auto veec : vector)
+	{
+		center.x += veec.x;
+		center.y += veec.y;
+	}
 
-	sqrt(2./xVar, Scalar(s_x));
-	sqrt(2./yVar, Scalar(s_y));
+	center.x /= vector.size(); // x maen
+	center.y /= vector.size(); // y mean
+
+	float sum = 0;
+
+	for (auto veec :vector)
+	{
+		double tmp = norm(veec - center);
+		sum += tmp;
+	}
+	center *= -1;
+
+	float scale = sqrt(2.) / (sum / vector.size());
+	
+	matrix.row(0).col(0) = scale;
+	matrix.row(1).col(1) = scale;
+	matrix.row(0).col(2) = center.x;
+	matrix.row(1).col(2) = center.y;
+	return matrix;
+	// float xMean, yMean, xVar, yVar, s_x = 0, s_y = 0;
+	// Point3f xyMean = meanObjectPoints(vector);
+	// xMean = xyMean.x;
+	// yMean = xyMean.y;
+	// Point3f xyVariance = varianceObjectPoints(vector, xMean, yMean);
+	// xVar = xyVariance.x;
+	// yVar = xyVariance.y;
+	// //meanStdDev(vector, xMean, xDev);
+	// //meanStdDev(vector, yMean, yDev);
+	// //xVar = xDev*xDev;
+	// //yVar = yDev*yDev;
+
+	// sqrt(2./xVar, Scalar(s_x));
+	// sqrt(2./yVar, Scalar(s_y));
 
 
-	n_u.row(0).col(0) = s_x;
-	n_u.row(0).col(1) = 0;
-	n_u.row(0).col(2) = -s_x*xMean;
-	n_u.row(1).col(0) = 0;
-	n_u.row(1).col(1) = s_y;
-	n_u.row(1).col(2) = -s_y*yMean;
-	n_u.row(2).col(0) = 0;
-	n_u.row(2).col(1) = 0;
-	n_u.row(2).col(2) = 1;
+	// nObj.row(0).col(0) = s_x;
+	// nObj.row(0).col(1) = 0;
+	// nObj.row(0).col(2) = -s_x*xMean;
+	// nObj.row(1).col(0) = 0;
+	// nObj.row(1).col(1) = s_y;
+	// nObj.row(1).col(2) = -s_y*yMean;
+	// nObj.row(2).col(0) = 0;
+	// nObj.row(2).col(1) = 0;
+	// nObj.row(2).col(2) = 1;
 
-	return n_u;
+	// return nObj;
 }
 
 void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S)
 {
-	Mat x(3, 1, CV_32FC1), xp(3, 1, CV_32FC1);
-	for(int i = 0; i < point.size(); i++)
+	cout << "NORMALIZE IMAGE POINTS" << endl;
+	Mat x(3, 1, CV_64FC1), xp(3, 1, CV_64FC1);
+	for(unsigned i = 0; i < point.size(); i++)
 	{
-		x.row(0).col(0) = point[i].x;
-		x.row(1).col(0) = point[i].y;
-		x.row(2).col(0) = 1;
+		x.at<float>(0, 0) = point[i].x;
+		x.at<float>(1, 0) = point[i].y;
+		x.at<float>(2, 0) = 1.;
 		xp = S.cross(x);
 		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
 		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
@@ -145,12 +272,13 @@ void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S)
 
 void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S)
 {
+	cout << "NORMALIZE OBJECT POINTS" << endl;
 	Mat x(3, 1, CV_32FC1), xp(3, 1, CV_32FC1);
-	for(int i = 0; i < point.size(); i++)
+	for(unsigned i = 0; i < point.size(); i++)
 	{
-		x.row(0).col(0) = point[i].x;
-		x.row(1).col(0) = point[i].y;
-		x.row(2).col(0) = point[i].z;
+		x.at<float>(0, 0) = point[i].x;
+		x.at<float>(1, 0) = point[i].y;
+		x.at<float>(2, 0) = point[i].z;
 		xp = S.cross(x);
 		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
 		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
@@ -160,36 +288,44 @@ void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S)
 
 Mat homographyDlt()
 {
+	cout << "DLT" << endl;
 	Mat img, obj, invTgtS;
 	Mat A = Mat::zeros(2*imagePoints.size(), 9, CV_64FC1);
-	Mat H;
+	Mat H(3, 3, CV_64FC1);
 	img = homographyDltSimEtimationImagePoints(imagePoints);
+	cout << img << endl;
+	cout << "********************" << endl;
 	obj = homographyDltSimEtimationObjectPoints(objectPoints);
+	cout << obj << endl;
+	cout << "********************" << endl;
 
 	auto src_n = imagePoints;
+	//cout << "scr_n = " << src_n << endl;
 	auto tgt_n = objectPoints; 
 
 	invTgtS = obj.clone();
+	cout << "invTgtS = " << invTgtS << endl;
 	invert(invTgtS, invTgtS);
+	cout << "Invert invTgts = " << invTgtS << endl;
 
-	homographyDltNormalizeImagePoints(src_n, img);
-	homographyDltNormalizeObjectPoints(tgt_n, obj);
+	//homographyDltNormalizeImagePoints(src_n, img);
+	//homographyDltNormalizeObjectPoints(tgt_n, obj);
 
 	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
 		A.at<float>(i*2 + 0, 0) = -1*src_n[i].x;
 		A.at<float>(i*2 + 0, 1) = -1*src_n[i].y;
 		A.at<float>(i*2 + 0, 2) = -1;
-		A.at<float>(i*2 + 0, 3) = 0;
-		A.at<float>(i*2 + 0, 4) = 0;
-		A.at<float>(i*2 + 0, 5) = 0;
+		//A.at<float>(i*2 + 0, 3) = 0;
+		//A.at<float>(i*2 + 0, 4) = 0;
+		//A.at<float>(i*2 + 0, 5) = 0;
 		A.at<float>(i*2 + 0, 6) = src_n[i].x * tgt_n[i].x;
 		A.at<float>(i*2 + 0, 7) = src_n[i].y * tgt_n[i].x;
 		A.at<float>(i*2 + 0, 8) = tgt_n[i].x;
 
-		A.at<float>(i*2 + 1, 0) = 0;
-		A.at<float>(i*2 + 1, 1) = 0;
-		A.at<float>(i*2 + 1, 2) = 0;
+		//A.at<float>(i*2 + 1, 0) = 0;
+		//A.at<float>(i*2 + 1, 1) = 0;
+		//A.at<float>(i*2 + 1, 2) = 0;
 		A.at<float>(i*2 + 1, 3) = -1*src_n[i].x;
 		A.at<float>(i*2 + 1, 4) = -1*src_n[i].y;
 		A.at<float>(i*2 + 1, 5) = -1;
@@ -199,16 +335,20 @@ Mat homographyDlt()
 		
 	}
 
-	Mat w;
-	vector<Mat> vt;
-	vector<float> u;
+	Mat S, U, VT;
+	//vector<float> U;
 
-	SVDecomp(A, w, u, vt);
+	// SVDecomp(A, S, U, VT);
+	// cout << "VT = " << VT << endl;
+	// cout << "**************" << endl;
+	// cout << "VT[8] = " << VT.row(8) << endl;
+	//solve(A, H, 0, DECOMP_SVD);
+
 	
-	Mat h_norm = vt[argmin(u)];
-	h_norm.reshape(3, 3);
+	//Mat h_norm = VT.col(-1)
+	//h_norm.reshape(3, 3);
 
-	H = invTgtS * h_norm * img;
+	//H = invTgtS * h_norm * img;
 	return H;
 
 	
@@ -228,98 +368,98 @@ int argmin(vector<float>& vector)
 
 // //************************CAMERA MATRIX****************************//
 
-// vector<float> V_ij(int i, int j, Matx33d H)
-// {
-// 	vector<float> v;
-// 	v.push_back(H(0, i)*H(0, j));
-// 	v.push_back(H(0, i)*H(1, j) + H(1, i)*H(0, j));
-// 	v.push_back(H(1, i)*H(1, j));
-// 	v.push_back(H(2, i)*H(0, j)*H(0, i)*H(2, j));
-// 	v.push_back(H(2, i)*H(1, j) + H(1, i)*H(2, j));
-// 	v.push_back(H(2, i)*H(2, j));
-// 	return v;
-// }
+vector<float> V_ij(int i, int j, Matx33d H)
+{
+	vector<float> v;
+	v.push_back(H(0, i)*H(0, j));
+	v.push_back(H(0, i)*H(1, j) + H(1, i)*H(0, j));
+	v.push_back(H(1, i)*H(1, j));
+	v.push_back(H(2, i)*H(0, j)*H(0, i)*H(2, j));
+	v.push_back(H(2, i)*H(1, j) + H(1, i)*H(2, j));
+	v.push_back(H(2, i)*H(2, j));
+	return v;
+}
 
-// Mat getIntrinsicParameters(vector<Mat>& H_r)
-// {
-// 	int M = H_r.size();
-// 	Mat H, V = Mat(2*M, 6, CV_64FC1), u;
-// 	vector<Mat> vt;
-// 	vector<float> s;
+Mat getIntrinsicParameters(vector<Mat>& H_r)
+{
+	int M = H_r.size();
+	Mat H, V = Mat(2*M, 6, CV_64FC1), u;
+	vector<Mat> vt;
+	vector<float> s;
 
-// 	for (int i = 0; i < M; i++)
-// 	{
-// 		vector<float> h_r_1 = V.row(i*2);
-// 		vector<float> h_r_2 = V.row(i*2 + 1);
+	for (int i = 0; i < M; i++)
+	{
+		vector<float> h_r_1 = V.row(i*2);
+		vector<float> h_r_2 = V.row(i*2 + 1);
 
-// 		auto v12 = V_ij(0, 1, H_r[i]);
-// 		auto v11 = V_ij(0, 0, H_r[i]);
-// 		auto v22 = V_ij(1, 1, H_r[i]);
-// 		vector<float> v11_v22;
-// 		subtract(v11, v22, v11_v22);
+		auto v12 = V_ij(0, 1, H_r[i]);
+		auto v11 = V_ij(0, 0, H_r[i]);
+		auto v22 = V_ij(1, 1, H_r[i]);
+		vector<float> v11_v22;
+		subtract(v11, v22, v11_v22);
 
-// 		for (int i = 0; i < v12.size(); i++)
-// 		{
-// 			V.row(i*2).col(i) = v12[i];
-// 		}
+		for (unsigned i = 0; i < v12.size(); i++)
+		{
+			V.row(i*2).col(i) = v12[i];
+		}
 
-// 		for (int i = 0; i < v11_v22.size(); i++)
-// 		{
-// 			V.row(i*2 + 1).col(i) = v11_v22[i]; 
-// 		}
-// 	}
+		for (unsigned i = 0; i < v11_v22.size(); i++)
+		{
+			V.row(i*2 + 1).col(i) = v11_v22[i]; 
+		}
+	}
 
-// 	SVDecomp(V, u, s, vt);
-// 	vector<float> b = vt[argmin(s)];
+	SVDecomp(V, u, s, vt);
+	vector<float> b = vt[argmin(s)];
 
-// 	float w = b[0] * b[2] * b[5] - b[1]*b[1] * b[5] - b[0] * b[4]*b[4] + 2 * b[1] * b[3] * b[4] - b[2] * b[3]*b[3];
-// 	float d = b[0] * b[2] - b[1]*b[1];
+	float w = b[0] * b[2] * b[5] - b[1]*b[1] * b[5] - b[0] * b[4]*b[4] + 2 * b[1] * b[3] * b[4] - b[2] * b[3]*b[3];
+	float d = b[0] * b[2] - b[1]*b[1];
 
-// 	float alpha, beta, gama, tmp, uc, vc;
-// 	sqrt(Scalar(w / (d * b[0])), Scalar(alpha));
-// 	sqrt(Scalar(w / d*d*b[0]), Scalar(beta));
-// 	sqrt(Scalar(w / (d*d*b[0])), Scalar(tmp));
-// 	gama = tmp * b[1];
-// 	uc = (b[1]*b[4] - b[2]*b[3]) / d;
-// 	vc = (b[1]*b[3] - b[0]*b[4]) / d;
+	float alpha = 0, beta = 0, gama, tmp = 0, uc, vc;
+	sqrt(Scalar(w / (d * b[0])), Scalar(alpha));
+	sqrt(Scalar(w / d*d*b[0]), Scalar(beta));
+	sqrt(Scalar(w / (d*d*b[0])), Scalar(tmp));
+	gama = tmp * b[1];
+	uc = (b[1]*b[4] - b[2]*b[3]) / d;
+	vc = (b[1]*b[3] - b[0]*b[4]) / d;
 
-// 	Mat K = Mat(3, 3, CV_64FC1);
-// 	K.row(0).col(0) = alpha;
-// 	K.row(0).col(0) = gama;
-// 	K.row(0).col(0) = uc;
-// 	K.row(0).col(0) = 0;
-// 	K.row(0).col(0) = beta;
-// 	K.row(0).col(0) = vc;
-// 	K.row(0).col(0) = 0;
-// 	K.row(0).col(0) = 0;
-// 	K.row(0).col(0) = 1;
+	Mat K = Mat(3, 3, CV_64FC1);
+	K.row(0).col(0) = alpha;
+	K.row(0).col(0) = gama;
+	K.row(0).col(0) = uc;
+	K.row(0).col(0) = 0;
+	K.row(0).col(0) = beta;
+	K.row(0).col(0) = vc;
+	K.row(0).col(0) = 0;
+	K.row(0).col(0) = 0;
+	K.row(0).col(0) = 1;
 
-// 	return K;
+	return K;
 
-// }
+}
 
 // Mat extrinsicsCalculation(Mat& intrinsic, Mat& H_r)
 // {
-// 	Mat homography = H_r.reshape(3, 3);
-// 	Mat intrinsicInv; 
-// 	invert(intrinsic, intrinsicInv);
+// 	auto intrinsicInv = intrinsic.clone();
+// 	invert(intrinsicInv, intrinsicInv);
+// 	Mat rt(3, 4, CV_64FC1);
 
-// 	vector<float> h1, h2, h3;
-// 	h1 = homography.col(0);
-// 	h2 = homography.col(1);
-// 	h3 = homography.col(2);
+// 	auto h1 = H_r.col(0);
+// 	auto h2 = H_r.col(1);
+// 	auto h3 = H_r.col(2);
 
-// 	float lam_r1, lam_r2, Lam_r3 r3;
-// 	vector<float> r1, r2, t;
-// 	lam_r1 = 1 / normalize(dot(intrinsicInv, h1));
-// 	lam_r2 = 1 / normalize(dot(intrinsicInv, h2));
-// 	lam_r3 = (lam_r1 + lam_r2) / 2;
-// 	r1 = lam_r1 * dot(intrinsicInv, h1);
-// 	r2 = lam_r2 * dot(intrinsicInv, h2);
-// 	r3 = r1.cross(r2);
-// 	t = transpose((Lam_r3 * dot(intrinsicInv , h3)));
-	
-// 	Mat rt;
+// 	auto r1 = intrinsicInv * h1;
+// 	auto r2 = intrinsicInv * h2;
+
+// 	float lam1 = 1. / cv::norm(r1);
+// 	float lam2 = 1. / cv::norm(r2);
+// 	float lam3 = (lam1 + lam2) / 2.;
+
+// 	r1 *= lam1;
+// 	r2 *= lam2;
+// 	auto r3 = r1.cross(r2);
+
+// 	auto t = (intrinsicInv * h3) * lam3;
 
 // 	rt.row(0).col(0) = r1[0];
 // 	rt.row(0).col(1) = r2[0];
@@ -335,11 +475,51 @@ int argmin(vector<float>& vector)
 // 	rt.row(2).col(3) = t[2];
 
 // 	return rt;
+
+	
+
+// 	// Mat homography = H_r.reshape(3, 3);
+// 	// auto intrinsicInv = intrinsic.clone(); 
+// 	// invert(intrinsicInv, intrinsicInv);
+
+// 	// vector<float> h1, h2, h3;
+// 	// h1 = homography.col(0);
+// 	// h2 = homography.col(1);
+// 	// h3 = homography.col(2);
+
+// 	// float lam_r1, lam_r2, lam_r3;
+// 	// vector<float> r1, r2, r3, t;
+// 	// normalize(intrinsicInv.Mat::dot(h1), intrinsicInv);
+// 	// lam_r1 = 1. / intrinsicInv;
+// 	// normalize(intrinsicInv.Mat::dot(h2), intrinsicInv);
+// 	// lam_r2 = 1. / intrinsicInv;
+// 	// lam_r3 = (lam_r1 + lam_r2) / 2;
+// 	// r1 = lam_r1 * intrinsicInv.Mat::dot(h1);
+// 	// r2 = lam_r2 * intrinsicInv.Mat::dot(h2);
+// 	// r3 = r1.cross(r2);
+// 	// t = transpose(lam_r3 * intrinsicInv.Mat::dot(h3));
+	
+// 	// Mat rt;
+
+// 	// rt.row(0).col(0) = r1[0];
+// 	// rt.row(0).col(1) = r2[0];
+// 	// rt.row(0).col(2) = r3[0];
+// 	// rt.row(0).col(3) = t[0];
+// 	// rt.row(1).col(0) = r1[1];
+// 	// rt.row(1).col(1) = r2[1];
+// 	// rt.row(1).col(2) = r3[1];
+// 	// rt.row(1).col(3) = t[1];
+// 	// rt.row(2).col(0) = r1[2];
+// 	// rt.row(2).col(1) = r2[2];
+// 	// rt.row(2).col(2) = r3[2];
+// 	// rt.row(2).col(3) = t[2];
+
+// 	// return rt;
 	
 // }
 
 
-// // Calculating dot product from matrices A and B
+// Calculating dot product from matrices A and B
 // vector<float> dot(Mat& A, Mat& B)
 // {
 // 	vector<float> dot;
@@ -361,7 +541,7 @@ int argmin(vector<float>& vector)
 // 	vector<Mat> extrinsics;
 // 	Mat rt;
 
-// 	for (int i = 0; i < homographies.size(); i++)
+// 	for (unsigned i = 0; i < homographies.size(); i++)
 // 	{
 // 		rt = extrinsicsCalculation(intrinsic, homographies[i]);
 // 		extrinsics.push_back(rt);

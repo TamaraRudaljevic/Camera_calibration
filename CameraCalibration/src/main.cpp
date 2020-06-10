@@ -6,8 +6,8 @@
 using namespace std;
 using namespace cv;
 
-extern vector<vector<Point2f>> imagePoints;
-extern vector<vector<Point3f>> objectPoints;
+extern vector<Point2f> imagePoints;
+extern vector<Point3f> objectPoints;
 
 int main(int argc, char *argv[])
 {
@@ -18,23 +18,20 @@ int main(int argc, char *argv[])
 
 	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
-		for (unsigned j = 0; j < imagePoints[i].size(); j++)
-		{
-			cout << imagePoints[i][j];
-		}
+		cout << imagePoints[i].x << " " << imagePoints[i].y << endl;
 	}
 
 	cout << "******************" << endl;
 
 	for (unsigned i = 0; i < objectPoints.size(); i++)
 	{
-		for (unsigned j = 0; j < objectPoints[i].size(); j++)
-		{
-			cout << objectPoints[i][j];
-		}
+		cout << objectPoints[i].x << " " << objectPoints[i].y << " " << objectPoints[i].z << endl;;
 	}
 
 	cout << endl <<  "******************" << endl;
+
+	Mat H = homographyDlt();
+	cout << H << endl;
 	
 	
 

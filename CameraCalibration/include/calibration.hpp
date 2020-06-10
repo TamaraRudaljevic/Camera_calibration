@@ -6,6 +6,8 @@
 #include <opencv2/calib3d.hpp>
 #include <iostream>
 #include <math.h>
+#include <opencv2/core.hpp>
+#include <inttypes.h>
 
 using namespace std;
 using namespace cv;
