@@ -12,7 +12,9 @@ extern vector<Point3f> objectPoints;
 int main(int argc, char *argv[])
 {
 	
-	//************************************************//
+	//******************************************************************//
+	//***********************CHESSBOARD CORNERS*************************//
+	//******************************************************************//
 
 	vector<Point2f> corners = findchessboardCorners();
 
@@ -30,12 +32,44 @@ int main(int argc, char *argv[])
 
 	cout << endl <<  "******************" << endl;
 
-	Mat H = homographyDlt();
-	cout << H << endl;
-	
-	
 
+	//******************************************************************//
+	//*************************HOMOGRAPHY******************************//
+	//*****************************************************************//
 
+	//Mat H = homographyDlt();
+	//cout << H << endl;
+	vector<Mat> homographies;
+	Mat H;
+
+	// for (unsigned i = 0; i < objectPoints.size(); i++)
+	// {
+	// 	H = homographyDlt();
+	// 	homographies.push_back(H);
+	// }
+
+	// for (unsigned i = 0; i < homographies.size(); i++)
+	// {
+	// 	cout << homographies[i] << endl;
+	// }
+
+	Mat h = homographyDlt();
+	cout << "h = " << h << endl;
+	//cout << "h = " << endl;
+
+	// for (int i = 0; i < objectPoints.size(); i++)
+	// {
+	// 	H = homographyLeastSquares();
+	// 	homographies.push_back(H);
+	// }
+
+	// for (unsigned i = 0; i < homographies.size(); i++)
+	// {
+	// 	cout << homographies[i] << endl;
+	// }
+	// H = homographyLeastSquares();
+	// cout << "H = " << H << endl;
+	
 	
 
 	//************************************************//

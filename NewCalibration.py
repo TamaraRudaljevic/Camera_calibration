@@ -142,11 +142,12 @@ def compute_view_based_homography(correspondence, reproj = False):
 
     u, s, vh = np.linalg.svd(M)
     #print(vh)
-    print("*******************")
-    print("u = ", vh)
+    #print("*******************")
+    #print("u = ", vh)
 
 
     h_norm = vh[np.argmin(s)]
+    #print(np.argmin(s))
     h_norm = h_norm.reshape(3, 3)
 
     #print(N_u_inv)
@@ -404,6 +405,8 @@ H_r = []
 for i in range(len(H)):
     h_opt = refine_homographies(H[i], chessboard_correspondences_normalized[i], skip=False)
     H_r.append(h_opt)
+
+print("H_r", H_r)
 
 k = get_intrinsic_parameters(H_r)
 #print(k)

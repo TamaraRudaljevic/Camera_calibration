@@ -258,13 +258,15 @@ Mat homographyDltSimEtimationObjectPoints(vector<Point3f>& vector)
 void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S)
 {
 	cout << "NORMALIZE IMAGE POINTS" << endl;
-	Mat x(3, 1, CV_64FC1), xp(3, 1, CV_64FC1);
+	Mat x(3, 3, CV_64FC1), xp(3, 3, CV_64FC1);
 	for(unsigned i = 0; i < point.size(); i++)
 	{
 		x.at<float>(0, 0) = point[i].x;
 		x.at<float>(1, 0) = point[i].y;
 		x.at<float>(2, 0) = 1.;
-		xp = S.cross(x);
+		//cout << "S size = " << S.size() << endl;
+		//xp = S.cross(x);
+		xp.dot(S);
 		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
 		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
 	}
@@ -273,23 +275,43 @@ void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S)
 void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S)
 {
 	cout << "NORMALIZE OBJECT POINTS" << endl;
-	Mat x(3, 1, CV_32FC1), xp(3, 1, CV_32FC1);
+	Mat x(3, 3, CV_64FC1), xp(3, 3, CV_64FC1);
 	for(unsigned i = 0; i < point.size(); i++)
 	{
 		x.at<float>(0, 0) = point[i].x;
 		x.at<float>(1, 0) = point[i].y;
 		x.at<float>(2, 0) = point[i].z;
-		xp = S.cross(x);
+		//cout << "S size = " << S.size() << endl;
+		//xp = S.cross(x);
+		xp.dot(S);
 		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
 		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
 		point[i].z = 1;
 	}
 }
 
+int minarg(Mat& S)
+{
+	int minarg = 0;
+	float min = S.at<float>(0, 0);
+	for (int i = 0; i < S.size().height; i++)
+	{
+		for (int j = 0; j < S.size().width; j++)
+		{
+			if (min > S.at<float>(i, j))
+			{
+				min = S.at<float>(i, j);
+				minarg = i + j;
+			}
+		}
+	}
+	return minarg;
+}
+
 Mat homographyDlt()
 {
 	cout << "DLT" << endl;
-	Mat img, obj, invTgtS;
+	Mat img(3, 3, CV_64FC1), obj(3, 3, CV_64FC1), invTgtS(3, 3, CV_64FC1);
 	Mat A = Mat::zeros(2*imagePoints.size(), 9, CV_64FC1);
 	Mat H(3, 3, CV_64FC1);
 	img = homographyDltSimEtimationImagePoints(imagePoints);
@@ -308,24 +330,24 @@ Mat homographyDlt()
 	invert(invTgtS, invTgtS);
 	cout << "Invert invTgts = " << invTgtS << endl;
 
-	//homographyDltNormalizeImagePoints(src_n, img);
-	//homographyDltNormalizeObjectPoints(tgt_n, obj);
+	homographyDltNormalizeImagePoints(src_n, img);
+	homographyDltNormalizeObjectPoints(tgt_n, obj);
 
 	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
 		A.at<float>(i*2 + 0, 0) = -1*src_n[i].x;
 		A.at<float>(i*2 + 0, 1) = -1*src_n[i].y;
 		A.at<float>(i*2 + 0, 2) = -1;
-		//A.at<float>(i*2 + 0, 3) = 0;
-		//A.at<float>(i*2 + 0, 4) = 0;
-		//A.at<float>(i*2 + 0, 5) = 0;
+		A.at<float>(i*2 + 0, 3) = 0;
+		A.at<float>(i*2 + 0, 4) = 0;
+		A.at<float>(i*2 + 0, 5) = 0;
 		A.at<float>(i*2 + 0, 6) = src_n[i].x * tgt_n[i].x;
 		A.at<float>(i*2 + 0, 7) = src_n[i].y * tgt_n[i].x;
 		A.at<float>(i*2 + 0, 8) = tgt_n[i].x;
 
-		//A.at<float>(i*2 + 1, 0) = 0;
-		//A.at<float>(i*2 + 1, 1) = 0;
-		//A.at<float>(i*2 + 1, 2) = 0;
+		A.at<float>(i*2 + 1, 0) = 0;
+		A.at<float>(i*2 + 1, 1) = 0;
+		A.at<float>(i*2 + 1, 2) = 0;
 		A.at<float>(i*2 + 1, 3) = -1*src_n[i].x;
 		A.at<float>(i*2 + 1, 4) = -1*src_n[i].y;
 		A.at<float>(i*2 + 1, 5) = -1;
@@ -336,9 +358,27 @@ Mat homographyDlt()
 	}
 
 	Mat S, U, VT;
+	//Mat B = Mat::zeros(1, 1, CV_64FC1);
+	//solve(A, H, B);
 	//vector<float> U;
 
-	// SVDecomp(A, S, U, VT);
+	SVDecomp(A, U, S, VT);
+	//cout << "U size = " << U.size() << endl;
+	//cout << "S size = " << S.size() << endl;
+	//cout << "S height = " << S.size().height << endl;
+	//cout << "S width = " << S.size().width << endl;
+	//cout << "S = " << S << endl;
+	//cout << "VT size = " << VT.size() << endl;
+	//int minArg = minarg(S);
+	//cout << "minarg = " << minArg << endl;
+	//cout << "vt[8] = " << VT.row(8) << endl;
+	H = Mat(VT.row(8));
+	H = H.reshape(3, 3);
+	//cout << "H = " << H << endl;
+	
+
+	
+	
 	// cout << "VT = " << VT << endl;
 	// cout << "**************" << endl;
 	// cout << "VT[8] = " << VT.row(8) << endl;
@@ -347,24 +387,143 @@ Mat homographyDlt()
 	
 	//Mat h_norm = VT.col(-1)
 	//h_norm.reshape(3, 3);
+	//Mat src3 = Mat::zeros(1, 1, CV_64FC1);
+	Mat h(3, 3, CV_64FC1);
+	h.at<float>(0, 0) = VT.at<float>(8, 0);
+	h.at<float>(0, 1) = VT.at<float>(8, 1);
+	h.at<float>(0, 2) = VT.at<float>(8, 2);
+	h.at<float>(1, 0) = VT.at<float>(8, 3);
+	h.at<float>(1, 1) = VT.at<float>(8, 4);
+	h.at<float>(1, 2) = VT.at<float>(8, 5);
+	h.at<float>(2, 0) = VT.at<float>(8, 6);
+	h.at<float>(2, 1) = VT.at<float>(8, 7);
+	h.at<float>(2, 2) = VT.at<float>(8, 8);
+	//cout << VT.row(8) << endl;
 
-	//H = invTgtS * h_norm * img;
+	//cout << "invTgts size = " << invTgtS.size() << endl;
+	//cout << "img size = " << img.size() << endl;
+	//cout << "H size = " << H.size() << endl;
+	h.dot(invTgtS);
+	//cout << "h size novo = " << h.size() << endl;
+	h.dot(img);
+	//gemm(invTgtS, H, 1.0, noArray(), 0.0, H); //* img;
+	//gemm(H, img, 1.0, noArray(), 0.0, H);
+	return h;
+
+	
+}
+
+Mat homographyLeastSquares()
+{
+	Mat A, B, H;
+	A = Mat::zeros(imagePoints.size() * 2, 8, CV_64FC1);
+	B.create(imagePoints.size() * 2, 1, CV_64FC1);
+	// for (int i = 0; i < B.size().height; i++)
+	// {
+	// 	for (int j = 0; j < B.size().width; j++)
+	// 	{
+	// 		B.at<float>(i, j) = 0;
+	// 	}
+	// }
+
+	// populate matrices with data.
+	for (unsigned i = 0; i < imagePoints.size(); i++) {
+
+		auto &src = imagePoints[i];
+		auto &tgt = imagePoints[i];
+
+		B.at<Point3f>(i * 2, 0) = objectPoints[0];
+		B.at<Point3f>(i * 2 + 1, 0) = objectPoints[1];
+
+		A.at<float>(i * 2, 0) = src.x;
+		A.at<float>(i * 2, 1) = src.y;
+		A.at<float>(i * 2, 2) = 1;
+		A.at<float>(i * 2 + 1, 3) = src.x;
+		A.at<float>(i * 2 + 1, 4) = src.y;
+		A.at<float>(i * 2 + 1, 5) = 1;
+
+		A.at<float>(i * 2, 6) = -1 * src.x * tgt.x;
+		A.at<float>(i * 2, 7) = -1 * src.y * tgt.x;
+		A.at<float>(i * 2 + 1, 6) = -1 * src.x * tgt.y;
+		A.at<float>(i * 2 + 1, 7) = -1 * src.y * tgt.y;
+	}
+	Mat _H(8, 1, CV_64FC1);
+	Mat At;
+	transpose(A, At);
+	solve(At*A, At*B, _H);
+	cout << _H << endl;
+
+	H.create(3,3, CV_64FC1);
+	H.at<float>(0, 0) = _H.at<float>(0, 0);
+	H.at<float>(0, 1) = _H.at<float>(1, 0);
+	H.at<float>(0, 2) = _H.at<float>(2, 0);
+	H.at<float>(1, 0) = _H.at<float>(3, 0);
+	H.at<float>(1, 1) = _H.at<float>(4, 0);
+	H.at<float>(1, 2) = _H.at<float>(5, 0);
+	H.at<float>(2, 0) = _H.at<float>(6, 0);
+	H.at<float>(2, 1) = _H.at<float>(7, 0);
+	H.at<float>(2, 2) = _H.at<float>(8, 0);
 	return H;
 
 	
 }
 
-int argmin(vector<float>& vector)
+
+
+
+
+// int argmin(vector<float>& vector)
+// {
+// 	std::vector<float>::iterator iterator = std::min_element(vector.begin(), vector.end());
+// 	int min = iterator[0];
+// 	for (unsigned i = 0; i < vector.size(); i++)
+// 	{
+// 		if(vector[i] == min)
+// 			return i;
+// 	}
+// 	return -1;
+// }
+
+//##################################################################//
+
+
+Mat normalizePointsMatrix()
 {
-	std::vector<float>::iterator iterator = std::min_element(vector.begin(), vector.end());
-	int min = iterator[0];
-	for (unsigned i = 0; i < vector.size(); i++)
+	vector<float> xCoord, yCoord;
+	for (int i = 0; i < imagePoints.size(); i++)
 	{
-		if(vector[i] == min)
-			return i;
+		xCoord.push_back(imagePoints[i].x);
+		yCoord.push_back(imagePoints[i].y);
 	}
-	return -1;
+
+	float xMean, yMean, xDev, yDev, xVar, yVar;
+	meanStdDev(xCoord, Scalar(xMean), Scalar(xDev));
+	meanStdDev(yCoord, Scalar(yMean), Scalar(yDev));
+	xVar = xDev*xDev;
+	yVar = yDev*yDev;
+
+	float s_x, s_y;
+	s_x = sqrt(2/xVar);
+	s_y = sqrt(2/yVar);
+
+	Mat n;
+	n.at<float>(0, 0) = s_x;
+	n.at<float>(0, 1) = 0;
+	n.at<float>(0, 2) = -s_x*xMean;
+	n.at<float>(1, 0) = 0;
+	n.at<float>(1, 1) = s_y;
+	n.at<float>(1, 2) = -s_y*yMean;
+	n.at<float>(2, 0) = 0;
+	n.at<float>(2, 1) = 0;
+	n.at<float>(2, 2) = 1;
+
+	return n;
+
 }
+
+
+
+//##################################################################//
 
 // //************************CAMERA MATRIX****************************//
 
@@ -409,30 +568,30 @@ Mat getIntrinsicParameters(vector<Mat>& H_r)
 		}
 	}
 
-	SVDecomp(V, u, s, vt);
-	vector<float> b = vt[argmin(s)];
+	// //SVDecomp(V, u, s, vt);
+	// //vector<float> b = vt[argmin(s)];
 
-	float w = b[0] * b[2] * b[5] - b[1]*b[1] * b[5] - b[0] * b[4]*b[4] + 2 * b[1] * b[3] * b[4] - b[2] * b[3]*b[3];
-	float d = b[0] * b[2] - b[1]*b[1];
+	// float w = b[0] * b[2] * b[5] - b[1]*b[1] * b[5] - b[0] * b[4]*b[4] + 2 * b[1] * b[3] * b[4] - b[2] * b[3]*b[3];
+	// float d = b[0] * b[2] - b[1]*b[1];
 
-	float alpha = 0, beta = 0, gama, tmp = 0, uc, vc;
-	sqrt(Scalar(w / (d * b[0])), Scalar(alpha));
-	sqrt(Scalar(w / d*d*b[0]), Scalar(beta));
-	sqrt(Scalar(w / (d*d*b[0])), Scalar(tmp));
-	gama = tmp * b[1];
-	uc = (b[1]*b[4] - b[2]*b[3]) / d;
-	vc = (b[1]*b[3] - b[0]*b[4]) / d;
+	// float alpha = 0, beta = 0, gama, tmp = 0, uc, vc;
+	// sqrt(Scalar(w / (d * b[0])), Scalar(alpha));
+	// sqrt(Scalar(w / d*d*b[0]), Scalar(beta));
+	// sqrt(Scalar(w / (d*d*b[0])), Scalar(tmp));
+	// gama = tmp * b[1];
+	// uc = (b[1]*b[4] - b[2]*b[3]) / d;
+	// vc = (b[1]*b[3] - b[0]*b[4]) / d;
 
 	Mat K = Mat(3, 3, CV_64FC1);
-	K.row(0).col(0) = alpha;
-	K.row(0).col(0) = gama;
-	K.row(0).col(0) = uc;
-	K.row(0).col(0) = 0;
-	K.row(0).col(0) = beta;
-	K.row(0).col(0) = vc;
-	K.row(0).col(0) = 0;
-	K.row(0).col(0) = 0;
-	K.row(0).col(0) = 1;
+	// K.row(0).col(0) = alpha;
+	// K.row(0).col(0) = gama;
+	// K.row(0).col(0) = uc;
+	// K.row(0).col(0) = 0;
+	// K.row(0).col(0) = beta;
+	// K.row(0).col(0) = vc;
+	// K.row(0).col(0) = 0;
+	// K.row(0).col(0) = 0;
+	// K.row(0).col(0) = 1;
 
 	return K;
 
@@ -863,4 +1022,5 @@ Mat getIntrinsicParameters(vector<Mat>& H_r)
 // // }
 
 // //*****************************EXTRINSICS***********************//
+
 
