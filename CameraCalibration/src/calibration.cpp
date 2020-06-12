@@ -490,7 +490,7 @@ Mat homographyLeastSquares()
 Mat normalizePointsMatrix()
 {
 	vector<float> xCoord, yCoord;
-	for (int i = 0; i < imagePoints.size(); i++)
+	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
 		xCoord.push_back(imagePoints[i].x);
 		yCoord.push_back(imagePoints[i].y);

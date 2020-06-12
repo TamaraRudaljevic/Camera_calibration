@@ -2,6 +2,7 @@
 #include <opencv2/highgui.hpp>
 #include <vector>
 #include "../include/calibration.hpp"
+#include "../include/calib.hpp"
 
 using namespace std;
 using namespace cv;
@@ -88,6 +89,49 @@ int main(int argc, char *argv[])
 	
 
 	//************************************************//
+
+	cout << "*************************************" << endl;
+	cout << "*************************************" << endl;
+	cout << "*************************************" << endl;
+	cout << "*************************************" << endl;
+	vector<vector<Vec2f>> imagePointNorm = imageCorners();
+	for (unsigned i = 0; i < imagePointNorm.size(); i++)
+	{
+		for (unsigned j = 0; j < imagePointNorm[i].size(); j++)
+		{
+			cout << imagePointNorm[i][j] << endl;
+		}
+	}
+
+	cout << endl << "*****************************" << endl << endl;
+
+	vector<Vec3f> modelPoints = obj(6, 9, 1.);
+
+	for (unsigned i = 0; i < modelPoints.size(); i++)
+	{
+		//cout << modelPoints[i] << endl;
+	}
+
+	auto imagePointOrig = imagePointNorm;
+	auto N = normalizeImagePoints(imagePointNorm, imagePointNorm.size(), imagePointNorm[0].size());
+	cout << N << endl;
+	auto N_inv = N.clone();
+	invert(N_inv, N_inv);
+
+	auto imagePointsCnt = imagePointNorm.size();
+
+	vector<Mat> homography;
+
+	for (unsigned i = 0; i < imagePointsCnt; i++)
+	{
+		homography[i] = homographyDlt(imagePointNorm[i], modelPoints);
+		cout << "H[" << i << "] = " << homography[i] << endl;
+	}
+
+
+
+
+	//Mat H = homographyDlt(image)
 
 
 
