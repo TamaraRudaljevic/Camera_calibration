@@ -13,13 +13,15 @@ using namespace std;
 using namespace cv;
 
 
-vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize);
-vector<Point2f> findchessboardCorners();
+vector<Vec3f> objectPoint(unsigned row, unsigned col, float squarSize);
+//vector<Point2f> findchessboardCorners();
 Mat homographyDltSimEtimation(vector<Point2f>& vector);
 void homographyDltNormalize(vector<Point2f>& point, Mat& S);
-Mat homographyDlt();
-//int argmin(vector<float>& vector);
+Mat homographyDlt(vector<Vec2f> &imagePoints, vector<Vec3f> &objectPoints);
 Mat getIntrinsicParameters(vector<Mat> H_r);
-Mat extrinsicsCalculation(Mat& intrinsics, Mat& H_r);
-vector<Mat> getExtrinsicsParameters(Mat& intrinsics, vector<Mat>& homographies);
-Mat homographyLeastSquares();
+//Mat extrinsicsCalculation(Mat& intrinsics, Mat& H_r);
+//vector<Mat> getExtrinsicsParameters(Mat& intrinsics, vector<Mat>& homographies);
+//Mat homographyLeastSquares();
+Mat normalizeImagePoints(vector<vector<Vec2f>> &points, int w, int h);
+Mat intrinsicsDenormalize(Mat &K, Mat &N);
+Mat getExtrinsicsParameters(Mat &K, Mat &H);
