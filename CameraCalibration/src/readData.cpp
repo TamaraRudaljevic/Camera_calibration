@@ -31,7 +31,7 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
     if (fmodel == NULL || fdata1 == NULL || fdata2 == NULL || fdata3 == NULL || fdata4 == NULL || fdata5 == NULL)
     {
         cout << "Error opening file..." << endl;
-        return 1;
+        return false;
     }
 
     for (n=0; !feof(fmodel); n++ ) {
