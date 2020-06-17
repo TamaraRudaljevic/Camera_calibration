@@ -10,7 +10,8 @@ using namespace cv;
 // extern vector<Point2f> imagePoints;
 // extern vector<Point3f> objectPoints;
 string readPathZhang = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/zhang_data";
-string readPath = "/home/tamarar/Desktop/Novo/Camera_calibration/CamaearCalibration/ground_truth/";
+string readPathImages = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/";
+//string readPath = "/home/tamarar/Desktop/Novo/Camera_calibration/CamaearCalibration/ground_truth/";
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +27,52 @@ int main(int argc, char *argv[])
 	cout << "Reading data..." << endl;
 
 	readZ = readZhang(readPathZhang, imagePointsNormZhang, modelPointsZhang, wZ, hZ);
+	readImages(readPathImages, imagePointNorm, modelPoints);
+
+	for (unsigned i = 0; i < imagePointNorm.size(); i++)
+	{
+		for (unsigned j = 0; j < imagePointNorm.size(); j++)
+		{
+			//cout << imagePointNorm[i][j] << endl;
+			//cout << "Number of images: " << imagePointNorm.size() << endl;
+		}
+
+		cout << endl;
+	}
+
+	for (unsigned i = 0; i < modelPoints.size(); i++)
+	{
+		//cout << modelPoints[i] << endl;
+	}
 	//read = readData(readPath, imagePointNorm, modelPoints, w, h, modelSize);
+
+	
+	// FILE* file = fopen("/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/file.txt", "w");
+	// if (file == NULL)
+	// {
+	// 	cout << "File out not open.." << endl;
+	// }
+
+	// float* ptr;
+	// for (unsigned i = 0; i < imagePointsNormZhang.size(); i++)
+	// {
+	// 	for (unsigned j = 0; j < imagePointsNormZhang.size(); j++)
+	// 	{
+	// 		Vec2f(ptr) = imagePointsNormZhang[i][j];
+	// 	}
+	// }
+	// for (unsigned i = 0; i < imagePointsNormZhang.size(); i++)
+	// {
+	// 	for (unsigned j = 0; j < imagePointsNormZhang[i].size(); j++)
+	// 	{
+			
+	// 		fwrite(ptr, sizeof(float), sizeof(ptr), file);
+		
+	// 	}
+			
+	// }
+	// fclose(file);
+
 
 	if (readZ == false)
 	{
@@ -39,7 +85,7 @@ int main(int argc, char *argv[])
 	// 	cout << "Error reading data..." << endl;
 	// }
 
-	//auto imagePoints = imagePointNorm;
+	auto imagePoints = imagePointNorm;
 	auto imagePointsZhang = imagePointsNormZhang;
 
 	//****************************
@@ -48,51 +94,51 @@ int main(int argc, char *argv[])
 	auto NZhangInv = NZhang.clone();
 	invert(NZhangInv, NZhangInv);
 
-	// auto N = normalizeImagePoints(imagePointNorm, w, h);
-	// auto NInv = N.clone();
-	// invert(NInv, NInv);
+	auto N = normalizeImagePoints(imagePointNorm, w, h);
+	auto NInv = N.clone();
+	invert(NInv, NInv);
 
 	//****************************
 
-	//vector<Mat> H(imagePointNorm.size());
+	vector<Mat> H(imagePointNorm.size());
 	vector<Mat> HZhang(imagePointsNormZhang.size());
 	Mat tmpH(3, 3, CV_64FC1);
 	//****************************
 
-	for (unsigned i = 0; i < imagePointsNormZhang.size(); i++)
+	for (unsigned i = 0; i < imagePointNorm.size(); i++)
 	{
 		//H[i] = homographyDlt(imagePointNorm[i], modelPoints);
-		tmpH = homographyDlt(imagePointsNormZhang[i], modelPointsZhang);
+		tmpH = homographyDlt(imagePointNorm[i], modelPoints);
 		//optimize(imagePointsNormZhang[i], modelPointsZhang, HZhang[i], 1e-05);
-		HZhang.push_back(tmpH);
-		cout << "HZhang[i]" << tmpH << endl;
+		H.push_back(tmpH);
+		//cout << "H = " << tmpH << endl;
 	}
 
 	//Mat Kp = getIntrinsicParameters(H);
-	Mat KZhangp = getIntrinsicParameters(HZhang);
-	Mat tmp = Mat::zeros(3, 3, CV_64FC1);
+	// Mat KZhangp = getIntrinsicParameters(HZhang);
+	// Mat tmp = Mat::zeros(3, 3, CV_64FC1);
 
-	// if (countNonZero(Kp) > 3)
-	// {
-	// 	cout << "Error calculating intrinsic parameters." << endl;
-	// 	return EXIT_FAILURE;
-	// }
+	// // if (countNonZero(Kp) > 3)
+	// // {
+	// // 	cout << "Error calculating intrinsic parameters." << endl;
+	// // 	return EXIT_FAILURE;
+	// // }
 	
-	cout << "Intrinsics matrix K': " << endl << KZhangp << endl;
+	// cout << "Intrinsics matrix K': " << endl << KZhangp << endl;
 
-	auto KZhang = intrinsicsDenormalize(KZhangp, NZhang);
+	// auto KZhang = intrinsicsDenormalize(KZhangp, NZhang);
 
-	cout << "Denormalize intrinsics matrix K: " << endl << KZhang << endl;
+	// cout << "Denormalize intrinsics matrix K: " << endl << KZhang << endl;
 
-	vector<Mat> rtMatrices;
+	// vector<Mat> rtMatrices;
 
-	for (unsigned i = 0; i < imagePointNorm.size(); i++)
-	{
-		Mat tmp = NZhangInv*HZhang[i];
-		Mat rt = getExtrinsicsParameters(KZhang, tmp);
-		cout << "Extrinsic parameters: " << endl << rt << endl;
-		rtMatrices.push_back(rt);
-	}
+	// for (unsigned i = 0; i < imagePointNorm.size(); i++)
+	// {
+	// 	Mat tmp = NZhangInv*HZhang[i];
+	// 	Mat rt = getExtrinsicsParameters(KZhang, tmp);
+	// 	cout << "Extrinsic parameters: " << endl << rt << endl;
+	// 	rtMatrices.push_back(rt);
+	// }
 
 
 

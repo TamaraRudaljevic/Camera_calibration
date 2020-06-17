@@ -1,21 +1,7 @@
 #include "../include/readData.hpp"
 #include "../include/calibration.hpp"
 
-vector<string> split_string(string s, string del = " ")
-{
-    std::vector<std::string> tokens;
-
-	size_t pos = 0;
-	std::string token;
-
-	while ((pos = s.find(del)) != std::string::npos) {
-		tokens.push_back(s.substr(0, pos));
-		s.erase(0, pos + del.length());
-	}
-	tokens.push_back(s);
-
-	return tokens;
-}
+Size patternsize(9,6);
 
 bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vector<Vec3f> &modelPoints, int &w, int &h)
 {
@@ -41,6 +27,7 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 	}
 
 	fclose(fmodel);
+	
 
 	imagePointsNorm.resize(5);
 	for (i=0; i<n; i++ ) {
@@ -56,7 +43,6 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 		fscanf(fdata5,"%lf %lf ",&x,&y);
 		imagePointsNorm[4].push_back(Vec2f(x, y));
 	}
-    //cout << imagePointsNorm[4] << endl;
 
 	fclose(fdata1);
 	fclose(fdata2);
@@ -70,44 +56,89 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 
 }
 
-bool readData(string readPath, vector<vector<Vec2f>> &imagePointNorm, vector<Vec3f> &modelPoints, int &w, int &h, float modelSize)
-{
-    imagePointNorm = readPattern(readPath.c_str(), w, h);
-    modelPoints = objectPoint(6, 9, modelSize);
+// void readImages(string readPathImages, vector<vector<Vec2f>> &imagePoints, vector<Vec3f> &objectPoints)
+// {
 
-    return true;
+// }
 
-}
+// vector<string> split_string(string s, string del = " ")
+// {
+//     std::vector<std::string> tokens;
 
-vector<vector<Vec2f>> readPattern(string readPattern, int &w, int &h)
-{
-    vector<vector<Vec2f>> pattern;
-    ifstream read(readPattern);
-    string line;
+// 	size_t pos = 0;
+// 	std::string token;
+
+// 	while ((pos = s.find(del)) != std::string::npos) {
+// 		tokens.push_back(s.substr(0, pos));
+// 		s.erase(0, pos + del.length());
+// 	}
+// 	tokens.push_back(s);
+
+// 	return tokens;
+// }
+
+// bool readData(string readPath, vector<vector<Vec2f>> &imagePointNorm, vector<Vec3f> &modelPoints, int &w, int &h, float modelSize)
+// {
+//     imagePointNorm = readPattern(readPath.c_str(), w, h);
+//     modelPoints = objectPoint(6, 9, modelSize);
+
+//     return true;
+
+// }
+
+// vector<vector<Vec2f>> readPattern(string readPattern, int &w, int &h)
+// {
+//     vector<vector<Vec2f>> pattern;
+//     ifstream read(readPattern);
+//     string line;
     
-   if(std::getline(read, line)) {
-		auto l = split_string(line, " ");
-		if (l.size() == 2) {
-			w = std::atoi(l[0].c_str());
-			h = std::atoi(l[1].c_str());
-		}
-	} else {
-		w = h = 0;
-		return pattern;
-	}
+//    if(std::getline(read, line)) {
+// 		auto l = split_string(line, " ");
+// 		if (l.size() == 2) {
+// 			w = std::atoi(l[0].c_str());
+// 			h = std::atoi(l[1].c_str());
+// 		}
+// 	} else {
+// 		w = h = 0;
+// 		return pattern;
+// 	}
 
-    while(std::getline(read, line)) {
-		pattern.push_back(vector<Vec2f>());
-		auto &p = pattern.back();
-		for (auto &v : split_string(line, ",")) {
-			auto vec = split_string(v, " ");
-			if (vec.size() == 2) {
-				p.push_back(Vec2f(static_cast<float>(std::atof(vec[0].c_str())), static_cast<float>(std::atof(vec[1].c_str()))));
-			}
+//     while(std::getline(read, line)) {
+// 		pattern.push_back(vector<Vec2f>());
+// 		auto &p = pattern.back();
+// 		for (auto &v : split_string(line, ",")) {
+// 			auto vec = split_string(v, " ");
+// 			if (vec.size() == 2) {
+// 				p.push_back(Vec2f(static_cast<float>(std::atof(vec[0].c_str())), static_cast<float>(std::atof(vec[1].c_str()))));
+// 			}
+// 		}
+// 	}
+
+//     read.close();
+//     return pattern;
+// }
+
+void readImages(string readPathImages, vector<vector<Vec2f>> &imagePointNorm, vector<Vec3f> &modelPoints)
+{
+	vector<Vec2f> corners;
+	vector<Vec3f> objPoint = objectPoint(9, 6, 1.);
+	bool patternfound;
+	
+	for (int i = 1; i < 13; i++)
+	{
+		Mat image = imread(readPathImages + to_string(i) + ".png");
+		patternfound = findChessboardCorners(image, patternsize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
+		if (patternfound)
+		{
+			cout << "Corners found!" << endl;
+			imagePointNorm.push_back(corners);
+			modelPoints.insert(modelPoints.end(), objPoint.begin(), objPoint.end());
+			//modelPoints.push_back(objPoint);
+			//imagePoints.insert(imagePoints.end(), corners.begin(), corners.end());
+			//objectPoints.insert(objectPoints.end(), objPoint.begin(), objPoint.end());
+			//imagePoints.push_back(corners);
+			//objectPoints.push_back(objPoint);
 		}
 	}
-
-    read.close();
-    return pattern;
 }
 

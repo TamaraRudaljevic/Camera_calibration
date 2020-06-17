@@ -27,3 +27,10 @@ Mat getIntrinsicParameters(vector<Mat>& H_r);
 Mat intrinsicsDenormalize(Mat &K, Mat &N);
 Mat getExtrinsicsParameters(Mat &K, Mat &H);
 Mat normalizeImagePoints(vector<vector<Vec2f>> &points, int w, int h);
+
+Mat imagePointNomalizationMatrix(vector<Vec2f> &imagePoints);
+Mat objectPointNomalizationMatrix(vector<Vec3f> &objectPoints);
+Vec2f meanObjectPoint(vector<Vec3f> &objectPoints);
+Vec2f meanImagePoint(vector<Vec2f> &imagePoints);
+Vec2f varianceImagePoints(vector<Vec2f> &imagePoints, float xMean, float yMean);
+Vec2f varianceObjectPoints(vector<Vec3f> &objectPoints, float xMean, float yMean);

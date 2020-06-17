@@ -7,15 +7,15 @@ import numpy as np
 from cv2 import cv2
 from scipy import optimize as opt
 
-DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
-#DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/rad/Rad_'
+#DATA_DIR = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
+DATA_DIR = '/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/'
 PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
 #########################################################################
 # Loading images for calibration
 def get_camera_images():
-    images = [each for each in glob.glob(DATA_DIR + "*.jpg")]
+    images = [each for each in glob.glob(DATA_DIR + "*.png")]
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))
@@ -39,6 +39,9 @@ def getChessboardCorners(images = None):
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
+                print(corners)
+                print("\n")
+                print("\n")
                 object_points.append(objp[:,:-1]) 
                 #print(object_points)
                 correspondences.append([corners.astype(np.int), objp[:, :-1].astype(np.int)])
@@ -141,7 +144,7 @@ def compute_view_based_homography(correspondence, reproj = False):
 
 
     u, s, vh = np.linalg.svd(M)
-    #print(vh)
+    #print("vh = ", vh)
     #print("*******************")
     #print("u = ", vh)
 
@@ -156,6 +159,7 @@ def compute_view_based_homography(correspondence, reproj = False):
     h = np.matmul(np.matmul(N_u_inv,h_norm), N_x)
     
     h = h[:,:]/h[2, 2]
+    print("h = " , h)
 
     if reproj:
         reproj_error = 0
