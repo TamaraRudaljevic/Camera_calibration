@@ -3,7 +3,7 @@
 
 Size patternsize(9,6);
 
-bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vector<Vec3f> &modelPoints, int &w, int &h)
+/*bool readZhang(string readPathZhang, vector<vector<Point2f>> &imagePointsNorm, vector<Point3f> &modelPoints, int &w, int &h)
 {
     int i;
     int n = 0;
@@ -23,7 +23,7 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
     for (n=0; !feof(fmodel); n++ ) {
 		double x, y;
 		fscanf(fmodel,"%lf %lf ",&x,&y);
-		modelPoints.push_back(Vec3f(x, y, 1.));
+		modelPoints.push_back(Point3f(x, y, 1.));
 	}
 
 	fclose(fmodel);
@@ -33,15 +33,15 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 	for (i=0; i<n; i++ ) {
 		double x, y;
 		fscanf(fdata1,"%lf %lf ",&x,&y);
-		imagePointsNorm[0].push_back(Vec2f(x, y));
+		imagePointsNorm[0].push_back(Point2f(x, y));
 		fscanf(fdata2,"%lf %lf ",&x,&y);
-		imagePointsNorm[1].push_back(Vec2f(x, y));
+		imagePointsNorm[1].push_back(Point2f(x, y));
 		fscanf(fdata3,"%lf %lf ",&x,&y);
-		imagePointsNorm[2].push_back(Vec2f(x, y));
+		imagePointsNorm[2].push_back(Point2f(x, y));
 		fscanf(fdata4,"%lf %lf ",&x,&y);
-		imagePointsNorm[3].push_back(Vec2f(x, y));
+		imagePointsNorm[3].push_back(Point2f(x, y));
 		fscanf(fdata5,"%lf %lf ",&x,&y);
-		imagePointsNorm[4].push_back(Vec2f(x, y));
+		imagePointsNorm[4].push_back(Point2f(x, y));
 	}
 
 	fclose(fdata1);
@@ -54,7 +54,7 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 	h = 480;
 	return true;
 
-}
+}*/
 
 // void readImages(string readPathImages, vector<vector<Vec2f>> &imagePoints, vector<Vec3f> &objectPoints)
 // {
@@ -118,10 +118,11 @@ bool readZhang(string readPathZhang, vector<vector<Vec2f>> &imagePointsNorm, vec
 //     return pattern;
 // }
 
-void readImages(string readPathImages, vector<vector<Vec2f>> &imagePointNorm, vector<Vec3f> &modelPoints)
+void readImages(string readPathImages, vector<vector<Point2f>> &imagePointNorm, vector<vector<Point3f>> &modelPoints)
 {
-	vector<Vec2f> corners;
-	vector<Vec3f> objPoint = objectPoint(9, 6, 1.);
+	vector<Point2f> corners;
+	//vector<Vec3f> objPoint = objectPoint(9, 6, 1.);
+	vector<Point3f> object;
 	bool patternfound;
 	
 	for (int i = 1; i < 13; i++)
@@ -131,8 +132,10 @@ void readImages(string readPathImages, vector<vector<Vec2f>> &imagePointNorm, ve
 		if (patternfound)
 		{
 			cout << "Corners found!" << endl;
+			object = objectPoint(9, 6, 1.);
+			modelPoints.push_back(object);
 			imagePointNorm.push_back(corners);
-			modelPoints.insert(modelPoints.end(), objPoint.begin(), objPoint.end());
+			//modelPoints.insert(modelPoints.end(), objPoint.begin(), objPoint.end());
 			//modelPoints.push_back(objPoint);
 			//imagePoints.insert(imagePoints.end(), corners.begin(), corners.end());
 			//objectPoints.insert(objectPoints.end(), objPoint.begin(), objPoint.end());
