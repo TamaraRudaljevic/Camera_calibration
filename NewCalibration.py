@@ -39,7 +39,6 @@ def getChessboardCorners(images = None):
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
-                #print(corners)
                 #print("\n")
                 #print("\n")
                 object_points.append(objp[:,:-1]) 
@@ -49,7 +48,7 @@ def getChessboardCorners(images = None):
             print ("Error in detection points", ctr)
 
         ctr+=1
-    #print(correspondences)
+    print("Corners = ", correspondences[1])
     return correspondences
 
 #########################################################################
@@ -96,7 +95,7 @@ def normalize_points(chessboard_correspondences):
                 #print(n_o[i])
             
             n_u = np.matmul(N_u,normalized_hom_imp[i])
-            print(n_u)
+            #print(n_u)
             normalized_hom_imp[i] = n_u/n_u[-1]
 
         normalized_objp = normalized_hom_objp.reshape(normalized_hom_objp.shape[0], normalized_hom_objp.shape[1])
@@ -277,6 +276,8 @@ def get_intrinsic_parameters(H_r):
     u, s, vh = np.linalg.svd(V)
     b = vh[np.argmin(s)]
 
+    #print("b = " , b)
+
     # according to zhangs method
     # vc = (b[1]*b[3] - b[0]*b[4])/(b[0]*b[2] - b[1]**2)
     # l = b[5] - (b[3]**2 + vc*(b[1]*b[2] - b[0]*b[4]))/b[0]
@@ -408,17 +409,20 @@ H = []
 for correspondence in chessboard_correspondences_normalized:
     H.append(compute_view_based_homography(correspondence, reproj=0))
 
+#print(correspondence[0])
+
 H_r = []
 for i in range(len(H)):
     h_opt = refine_homographies(H[i], chessboard_correspondences_normalized[i], skip=False)
     H_r.append(h_opt)
 
-print("H_r", H_r)
+#print("H_r", H_r)
 
 k = get_intrinsic_parameters(H_r)
+
 #print(k)
 extrinsics, rotation = get_extrinsics_parameters(k, H_r)
-#print(extrinsics[0])
+print(extrinsics)
 
 # print(rotation)
 # print(extrinsics)

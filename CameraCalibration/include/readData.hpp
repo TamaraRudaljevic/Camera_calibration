@@ -9,6 +9,9 @@
 #include <opencv2/core.hpp>
 #include <inttypes.h>
 #include <fstream>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/calib3d/calib3d_c.h>
 
 using namespace std;
 using namespace cv;
