@@ -118,26 +118,32 @@ Size patternsize(9,6);
 //     return pattern;
 // }
 
-void readImages(string readPathImages, vector<vector<Point2f>> &imagePointNorm, vector<Point3f> &modelPoints, int &w, int &h)
+void readImages(string readPathImages, vector<vector<Point2d>> &imagePointNorm, vector<vector<Point3d>> &modelPoints, int &w, int &h)
 {
-	vector<Point2f> corners;
-	//vector<Vec3f> objPoint = objectPoint(9, 6, 1.);
-	vector<Point3f> object;
+	vector<Point2d> corners;
+	//vector<Point3f> objPoint = objectPoint(9, 6, 1.);
+	vector<Point3d> object;
 	bool patternfound;
 	
 	for (int i = 1; i < 13; i++)
 	{
 		Mat image = imread(readPathImages + to_string(i) + ".png");
+		//cout << image << endl;
 		w = image.size().width;
 		h = image.size().height;
 		patternfound = findChessboardCorners(image, patternsize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
 		if (patternfound)
 		{
-			cout << "Corners found!" << endl;
-			modelPoints = objectPoint(9, 6, 1.);
-			//modelPoints.push_back(object);
+			//cout << "Corners found!" << endl;
+			for (unsigned i = 0; i < corners.size(); i++)
+			{
+				//cout << corners[i] << endl;
+			}
+			object = objectPoint(9, 6, 1.);
+			//modelPoints.push_back(objPoint);
 			imagePointNorm.push_back(corners);
-			//modelPoints.insert(modelPoints.end(), objPoint.begin(), objPoint.end());
+			//modelPoints.insert(modelPoints.end(), object.begin(), object.end());
+			modelPoints.push_back(object);
 			//modelPoints.push_back(objPoint);
 			//imagePoints.insert(imagePoints.end(), corners.begin(), corners.end());
 			//objectPoints.insert(objectPoints.end(), objPoint.begin(), objPoint.end());

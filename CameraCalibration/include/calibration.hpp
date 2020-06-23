@@ -14,28 +14,28 @@ using namespace std;
 using namespace cv;
 
 
-vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize);
-Mat homographyDltSimEtimationImagePoints(vector<Point2f>& vector);
-Mat homographyDltSimEtimationObjectPoints(vector<Point3f>& vector);
-void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S);
-void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S);
-Mat homographyDlt(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints);
+vector<Point3d> objectPoint(unsigned row, unsigned col, double squarSize);
+Mat homographyDltSimEtimationImagePoints(vector<Point2d>& vector);
+Mat homographyDltSimEtimationObjectPoints(vector<Point3d>& vector);
+void homographyDltNormalizeImagePoints(vector<Point2d>& point, Mat& S);
+void homographyDltNormalizeObjectPoints(vector<Point3d>& point, Mat& S);
+Mat homographyDlt(vector<Point2d> &imagePoints, vector<Point3d> &objectPoints);
 Mat V_ij(Mat H, int i, int j);
 Mat getV(vector<Mat> &H);
 bool intrinsics(Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama);
 Mat getIntrinsicParameters(vector<Mat>& H_r);
 Mat intrinsicsDenormalize(Mat &K, Mat &N);
 Mat getExtrinsicsParameters(Mat &K, Mat &H);
-Mat normalizeImagePoints(vector<vector<Point2f>> &points, int w, int h);
+Mat normalizeImagePoints(vector<vector<Point2d>> &points, int w, int h);
 Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &imagePointsNorm, vector<vector<Point2f>> &imageProj, Mat &K);
 
-Mat imagePointNomalizationMatrix(vector<Point2f> &imagePoints);
-Mat objectPointNomalizationMatrix(vector<Point3f> &objectPoints);
-Point2f meanObjectPoint(vector<Point3f> &objectPoints);
-Point2f meanImagePoint(vector<Point2f> &imagePoints);
-Point2f varianceImagePoints(vector<Point2f> &imagePoints, float xMean, float yMean);
-Point2f varianceObjectPoints(vector<Point3f> &objectPoints, float xMean, float yMean);
+Mat imagePointNomalizationMatrix(vector<Point2d> &imagePoints);
+Mat objectPointNomalizationMatrix(vector<Point3d> &objectPoints);
+// Point2f meanObjectPoint(vector<Point3f> &objectPoints);
+// Point2f meanImagePoint(vector<Point2f> &imagePoints);
+// Point2f varianceImagePoints(vector<Point2f> &imagePoints, float xMean, float yMean);
+// Point2f varianceObjectPoints(vector<Point3f> &objectPoints, float xMean, float yMean);
 
 
-Mat homographyLeastSquares(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints);
-void pack_ab(vector<Point2f> &src_pts, vector<Point3f> &tgt_pts, Mat &A, Mat &B);
+// Mat homographyLeastSquares(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints);
+// void pack_ab(vector<Point2f> &src_pts, vector<Point3f> &tgt_pts, Mat &A, Mat &B);

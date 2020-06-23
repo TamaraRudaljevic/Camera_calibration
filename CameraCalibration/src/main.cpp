@@ -13,11 +13,11 @@ string readPathZhang = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCali
 string readPathImages = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/";
 //string readPath = "/home/tamarar/Desktop/Novo/Camera_calibration/CamaearCalibration/ground_truth/";
 
-void calibrateOpenCV(vector<vector<Point3f>> &modelPoints, vector<vector<Point2f>> &imagePointNorm, Mat &K, Mat &D)
+void calibrateOpenCV(vector<vector<Point3d>> &modelPoints, vector<vector<Point2d>> &imagePointNorm, Mat &K, Mat &D)
 {
-	vector<Point2f> corners;
+	vector<Point2d> corners;
 	// vector<Vec3f> objPoint = objectPoint(9, 6, 1.);
-	vector<Point3f> object;
+	vector<Point3d> object;
 	bool patternfound;
 	Size patternsize(9,6);
 	
@@ -27,7 +27,7 @@ void calibrateOpenCV(vector<vector<Point3f>> &modelPoints, vector<vector<Point2f
 		patternfound = findChessboardCorners(image, patternsize, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
 		if (patternfound)
 		{
-			cout << "Corners found!" << "i = " << i << endl;
+			//cout << "Corners found! " << "i = " << i << endl;
 			object = objectPoint(9, 6, 1.);
 			modelPoints.push_back(object);
 			imagePointNorm.push_back(corners);
@@ -36,17 +36,17 @@ void calibrateOpenCV(vector<vector<Point3f>> &modelPoints, vector<vector<Point2f
 
     Mat image = imread("/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/1.png");
     vector<Mat> rvecs, tvecs;
-    double ret = calibrateCamera(modelPoints, imagePointNorm, image.size(), K, D, rvecs, tvecs, CALIB_RATIONAL_MODEL);
+    bool ret = calibrateCamera(modelPoints, imagePointNorm, image.size(), K, D, rvecs, tvecs, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 }
 
 int main(int argc, char *argv[])
 {
 	cout << "MAIN" << endl;
-	vector<vector<Point2f>> imagePointsNormZhang;
-	vector<vector<Point2f>> imagePointNorm;
-	vector<Point3f> modelPointsZhang;
-	vector<Point3f> modelPoints;
-	vector<Point3f> tmpModelPoints;
+	vector<vector<Point2d>> imagePointsNormZhang;
+	vector<vector<Point2d>> imagePointNorm;
+	vector<Point3d> modelPointsZhang;
+	vector<Point3d> modelPoints;
+	vector<vector<Point3d>> tmpModelPoints;
 	int w = 0, h = 0, wZ = 0, hZ = 0;
 	bool readZ = 0, read = 0;
 
@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 		//cout << "Model points = " << tmpModelPoints[i] << endl;
 	}
 	//read = readData(readPath, imagePointNorm, modelPoints, w, h, modelSize);
+	cout << "size = " << tmpModelPoints.size() << endl;
 
 	//****************************
 
@@ -84,20 +85,19 @@ int main(int argc, char *argv[])
 	//Mat Hls(3, 3, CV_32FC1);
 	//****************************
 
-	auto N = normalizeImagePoints(imagePointNorm, w, h);
-	cout << "N = " << N <<endl;
-	auto N_inv = N.inv();
-	cout << "N_inv = " << N_inv << endl;
+	// Size size = imagePointNorm.size();
+	// h = size.height;
+	// // w = size.width;
+	// auto N = normalizeImagePoints(imagePointNorm, w, h);
+	// cout << "w = " << w << ", h = " << h << endl;
+	// cout << "N = " << N <<endl;
+	// Mat N_inv = N.inv();
+	// cout << "N_inv = " << N_inv << endl;
 
 	for (unsigned i = 0; i < imagePointNorm.size(); i++)
 	{
 		//H[i] = homographyDlt(imagePointNorm[i], modelPoints);
-		tmpH = homographyDlt(imagePointNorm[i], tmpModelPoints);
-
-		for (unsigned i = 0; i < tmpModelPoints.size(); i++)
-		{
-			//cout << tmpModelPoints[i] << endl;
-		}
+		tmpH = homographyDlt(imagePointNorm[i], tmpModelPoints[i]);
 		//Hls = homographyLeastSquares(imagePointNorm[i], tmpModelPoints[i]);
 		//optimize(imagePointsNormZhang[i], modelPointsZhang, HZhang[i], 1e-05);
 		H.push_back(tmpH);
@@ -111,13 +111,13 @@ int main(int argc, char *argv[])
 	// }
 
 	Mat Kp = getIntrinsicParameters(H);
-	//Mat KpLs = getIntrinsicParameters(HLastS);
+	// //Mat KpLs = getIntrinsicParameters(HLastS);
 	cout << "Kp = " << Kp << endl;
-	Mat K;
-	K = intrinsicsDenormalize(Kp, N);
-	cout << "K = " << K << endl;
-	Mat rt;
-	vector<Mat> RT;
+	// Mat K;
+	// K = intrinsicsDenormalize(Kp, N);
+	// cout << "K = " << K << endl;
+	// Mat rt;
+	// vector<Mat> RT;
 
 
 	for (unsigned i = 0; i < imagePointNorm.size(); i++)
@@ -126,19 +126,19 @@ int main(int argc, char *argv[])
 		// RT.push_back(rt);
 	}	
 
-	for (unsigned i = 0; i < RT.size(); i++)
-	{
-		//cout << "RT[" << i << "] = " << RT[i] << endl;
-	}
+	// for (unsigned i = 0; i < RT.size(); i++)
+	// {
+	// 	//cout << "RT[" << i << "] = " << RT[i] << endl;
+	// }
 
-	//****************CALIBRATE OPENCV****************//
+	// //****************CALIBRATE OPENCV****************//
 
-	vector<vector<Point3f>> modelOpenCV;
-	vector<vector<Point2f>> imageOpenCV;
-	Mat KOpenCv, DOpenCv;
+	vector<vector<Point3d>> modelOpenCV;
+	vector<vector<Point2d>> imageOpenCV;
+	Mat KOpenCv(3, 3, CV_64FC1), DOpenCv;
 
 
-	calibrateOpenCV(modelOpenCV, imageOpenCV, KOpenCv, DOpenCv);
+	//calibrateOpenCV(modelOpenCV, imageOpenCV, KOpenCv, DOpenCv);
 
 	//cout << "K OpenCv = " << KOpenCv << endl;
 	

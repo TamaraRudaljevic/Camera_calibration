@@ -33,23 +33,26 @@ def getChessboardCorners(images = None):
     correspondences = []
     ctr=0
     for (path, each) in get_camera_images(): 
+        #print(each)
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
         #print(corners)
         if ret:
             corners = corners.reshape(-1, 2)
+            print(corners)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 #print("\n")
                 #print("\n")
                 object_points.append(objp[:,:-1]) 
                 #print(object_points)
+                print("size = ", len(object_points))
                 correspondences.append([corners.astype(np.int), objp[:, :-1].astype(np.int)])
         else:
             print ("Error in detection points", ctr)
 
         ctr+=1
     #print("Image points size = ", len(correspondences[1]))
-    #print("Corners = ", correspondences[0])
+    #print("Corners = ", correspondences[1])
     return correspondences
 
 #########################################################################
@@ -79,7 +82,7 @@ def normalize_points(chessboard_correspondences):
         N_u, N_u_inv = get_normalization_matrix(imp)
         # print(N_u)
         hom_imp = np.array([ [[each[0]], [each[1]], [1.0]] for each in imp])
-        print(hom_imp)
+        #print(hom_imp)
         hom_objp = np.array([ [[each[0]], [each[1]], [1.0]] for each in objp])
         #print(hom_objp)
 
@@ -89,14 +92,14 @@ def normalize_points(chessboard_correspondences):
 
         for i in range(normalized_hom_objp.shape[0]):
             n_o = np.matmul(N_x,normalized_hom_objp[i])
-            print("obj = ", N_x)
+            #print("obj = ", N_x)
             #print(normalized_hom_objp)
             normalized_hom_objp[i] = n_o/n_o[-1]
             #for i in n_o:
                 #print(n_o[i])
             
             n_u = np.matmul(N_u,normalized_hom_imp[i])
-            print("img = ", N_u)
+            #print("img = ", N_u)
             #print(n_u)
             normalized_hom_imp[i] = n_u/n_u[-1]
 
@@ -119,8 +122,11 @@ def compute_view_based_homography(correspondence, reproj = False):
     normalized_image_points = correspondence[2]
     normalized_object_points = correspondence[3]
     N_u = correspondence[4]
-    #print(normalized_object_points)
+
+    #print("**********\n", normalized_image_points)
+
     N_x = correspondence[5]
+
     N_u_inv = correspondence[6]
     N_x_inv = correspondence[7]
 
@@ -144,16 +150,17 @@ def compute_view_based_homography(correspondence, reproj = False):
         M[2*i] = row_1
         M[(2*i) + 1] = row_2
 
-    #print("M = ", M)
+    #print("M = ", M[0])
 
 
     u, s, vh = np.linalg.svd(M)
-    #print("vh = ", vh)
+    print("vh = ", vh)
     #print("*******************")
-    #print("u = ", vh)
+    #print("s = ", s)
 
 
     h_norm = vh[np.argmin(s)]
+    #print(h_norm)
     #print(np.argmin(s))
     h_norm = h_norm.reshape(3, 3)
 
@@ -161,6 +168,7 @@ def compute_view_based_homography(correspondence, reproj = False):
     #print(N_x)
  
     h = np.matmul(np.matmul(N_u_inv,h_norm), N_x)
+    
     
     h = h[:,:]/h[2, 2]
     #print("h = " , h)
@@ -177,6 +185,7 @@ def compute_view_based_homography(correspondence, reproj = False):
         reproj_error = np.sqrt(reproj_error/N)/100.0
         print("Reprojection error : ", reproj_error)
 
+    #print(h)
     return h
 
 
@@ -411,6 +420,9 @@ H = []
 for correspondence in chessboard_correspondences_normalized:
     H.append(compute_view_based_homography(correspondence, reproj=0))
 
+# for i in range (len(H)):
+    #print("H = ", H[i])
+
 #print(correspondence[0])
 
 H_r = []
@@ -418,7 +430,6 @@ for i in range(len(H)):
     h_opt = refine_homographies(H[i], chessboard_correspondences_normalized[i], skip=False)
     H_r.append(h_opt)
 
-#print("H_r", H_r)
 
 k = get_intrinsic_parameters(H_r)
 
