@@ -118,14 +118,14 @@ Size patternsize(9,6);
 //     return pattern;
 // }
 
-void readImages(string readPathImages, vector<vector<Point2d>> &imagePointNorm, vector<vector<Point3d>> &modelPoints, int &w, int &h)
+void readImages(string readPathImages, vector<vector<Point2f>> &imagePointNorm, vector<vector<Point3f>> &modelPoints, int &w, int &h)
 {
-	vector<Point2d> corners;
+	vector<Point2f> corners;
 	//vector<Point3f> objPoint = objectPoint(9, 6, 1.);
-	vector<Point3d> object;
+	vector<Point3f> object;
 	bool patternfound;
 	
-	for (int i = 1; i < 13; i++)
+	for (int i = 1; i < 12; i++)
 	{
 		Mat image = imread(readPathImages + to_string(i) + ".png");
 		//cout << image << endl;

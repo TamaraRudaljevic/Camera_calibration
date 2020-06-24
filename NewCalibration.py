@@ -38,7 +38,7 @@ def getChessboardCorners(images = None):
         #print(corners)
         if ret:
             corners = corners.reshape(-1, 2)
-            print(corners)
+            #print(corners)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 #print("\n")
@@ -93,13 +93,14 @@ def normalize_points(chessboard_correspondences):
         for i in range(normalized_hom_objp.shape[0]):
             n_o = np.matmul(N_x,normalized_hom_objp[i])
             #print("obj = ", N_x)
-            #print(normalized_hom_objp)
+            #print("objectPoint mul = ", n_o)
             normalized_hom_objp[i] = n_o/n_o[-1]
             #for i in n_o:
                 #print(n_o[i])
             
             n_u = np.matmul(N_u,normalized_hom_imp[i])
             #print("img = ", N_u)
+            #print("imagePoint mul = ", n_u)
             #print(n_u)
             normalized_hom_imp[i] = n_u/n_u[-1]
 
@@ -154,17 +155,18 @@ def compute_view_based_homography(correspondence, reproj = False):
 
 
     u, s, vh = np.linalg.svd(M)
-    print("vh = ", vh)
+    #print("vh = ", vh[0])
     #print("*******************")
     #print("s = ", s)
 
 
     h_norm = vh[np.argmin(s)]
-    #print(h_norm)
+    print("h_norm = ", h_norm)
+    print("\n")
     #print(np.argmin(s))
     h_norm = h_norm.reshape(3, 3)
 
-    #print(N_u_inv)
+    #print("N_u_inv = ", N_u_inv)
     #print(N_x)
  
     h = np.matmul(np.matmul(N_u_inv,h_norm), N_x)
@@ -340,7 +342,7 @@ def extrinsicsCalculation(intrinsic, H_r):
     #print(homography)
     intrinsicsInv = np.linalg.inv(intrinsic)
     #rint("\n")
-    #print("intrinsicsInv = ", intrinsicsInv)
+    print("intrinsicsInv = ", intrinsicsInv)
     #print("\n")
     #print("intrinsic = ", intrinsic)
     #print("\n")
@@ -348,17 +350,31 @@ def extrinsicsCalculation(intrinsic, H_r):
     h1 = homography[:, 0]
     #print("*-**********************")
     #print("h1 = ", h1)
+    #print("\n")
     #print("*-**********************")
     h2 = homography[:, 1]
+    #print("h2 = ", h2)
+    #print("\n")
     h3 = homography[:, 2]
+    #print("h2 = ", h2)
+    #print("\n")
 
     lam_r1 = 1 / np.linalg.norm(np.dot(intrinsicsInv, h1))
     lam_r2 = 1 / np.linalg.norm(np.dot(intrinsicsInv, h2))
     lam_r3 = (lam_r1 + lam_r2) / 2
     r1 = lam_r1 * np.dot(intrinsicsInv, h1)
+    #print("r1 = ", r1) 
     r2 = lam_r2 * np.dot(intrinsicsInv, h2)
     r3 = np.cross(r1, r2, axis=0)
     t = np.array(lam_r3 * np.dot(intrinsicsInv, h3)).transpose()
+    print("lam_r3 = ", lam_r3)
+    print("\n")
+    print("intrinsicsInv = ", intrinsicsInv)
+    print("\n")
+    print("h3 = ", h3)
+    print("\n")
+
+    #print("t = " , t)
 
     # r = np.append(r1, r2, axis=1)
     # r = np.append(r, r3, axis=1)
@@ -435,7 +451,7 @@ k = get_intrinsic_parameters(H_r)
 
 print("K = ", k)
 extrinsics, rotation = get_extrinsics_parameters(k, H_r)
-#print(extrinsics)
+print("RT[0] = ", extrinsics[0])
 
 # print(rotation)
 # print(extrinsics)
