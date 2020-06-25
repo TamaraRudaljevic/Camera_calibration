@@ -16,9 +16,4 @@
 using namespace std;
 using namespace cv;
 
-
-//bool readZhang(string readPathZhang, vector<vector<Point2f>> &imagePointsNorm, vector<Point3f> &modelPoints, int &w, int &h);
-void readImages(string readPathImages, vector<vector<Point2f>> &imagePoints, vector<vector<Point3f>> &objectPoints, int &w, int &h);
-// bool readData(string readPath, vector<vector<Vec2f>> &imagePointNorm, vector<Vec3f> &modelPoints, int &w, int &h, float modelSize);
-// vector<string> split_string(string s, string del);
-// vector<vector<Vec2f>> readPattern(string readPattern, int &w, int &h);
+bool readImages(vector<vector<Point2f>> &imagePoints, vector<vector<Point3f>> &objectPoints, int &width, int &height);

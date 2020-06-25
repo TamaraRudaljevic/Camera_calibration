@@ -7,7 +7,9 @@
         "ostream": "cpp",
         "complex": "cpp",
         "iosfwd": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "string_view": "cpp",
+        "ratio": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

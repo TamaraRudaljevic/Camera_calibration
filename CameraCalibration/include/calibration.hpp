@@ -13,29 +13,14 @@
 using namespace std;
 using namespace cv;
 
-
-vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize);
-Mat homographyDltSimEtimationImagePoints(vector<Point2f>& vector);
-Mat homographyDltSimEtimationObjectPoints(vector<Point3f>& vector);
-void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S);
-void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S);
-Mat homographyDlt(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints);
-Mat V_ij(Mat H, int i, int j);
-Mat getV(vector<Mat> &H);
-bool intrinsics(Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama);
-Mat getIntrinsicParameters(vector<Mat>& H_r);
-Mat intrinsicsDenormalize(Mat &K, Mat &N);
-Mat getExtrinsicsParameters(Mat &K, Mat &H);
-Mat normalizeImagePoints(vector<vector<Point2f>> &points, int w, int h);
-Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &imagePointsNorm, vector<vector<Point2f>> &imageProj, Mat &K);
-
-Mat imagePointNomalizationMatrix(vector<Point2f> &imagePoints, Mat &objInv);
-Mat objectPointNomalizationMatrix(vector<Point3f> &objectPoints);
-// Point2f meanObjectPoint(vector<Point3f> &objectPoints);
-// Point2f meanImagePoint(vector<Point2f> &imagePoints);
-// Point2f varianceImagePoints(vector<Point2f> &imagePoints, float xMean, float yMean);
-// Point2f varianceObjectPoints(vector<Point3f> &objectPoints, float xMean, float yMean);
-
-
-// Mat homographyLeastSquares(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints);
-// void pack_ab(vector<Point2f> &src_pts, vector<Point3f> &tgt_pts, Mat &A, Mat &B);
+Mat V_ij(const Mat H, int i, int j);
+Mat getV(const vector<Mat> &H);
+bool intrinsics(const Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama);
+Mat getIntrinsicParameters(const vector<Mat>& H_r);
+Mat getExtrinsicsParameters(const Mat &K, const Mat &H);
+Mat distortion(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints, Mat &K, vector<Mat> &RT);
+//Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &imagePointsNorm, vector<vector<Point2f>> &imageProj, Mat &K);
+float computeReprojectionError(const vector<vector<Point3f>> &objectPoints, const vector<vector<Point2f>> &imagePoints, const vector<Mat> &rvecs, const vector<Mat> &tvecs, const Mat &cameraMatrix, bool fisheye);
+float computeReprojectionError(const vector<vector<Point3f>> &objectPoints, const vector<vector<Point2f>> &imagePoints, const vector<Mat> &rvecs, const vector<Mat> &tvecs, const Mat &cameraMatrix, const Mat &distCoef, vector<float> &perViewErrors, bool fisheye);
+float calc_reprojection(const Mat &A, const Mat &K, const vector<Point3f> &model_pts, const vector<Point2f> &image_pts, vector<Point2f> &image_pts_proj, vector<float> &k);
+vector<float> reproject_point(const vector<float> &world_ptn, const Mat &A, const Mat &K, const vector<float> &k);

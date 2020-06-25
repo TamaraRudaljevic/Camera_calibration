@@ -454,4 +454,4 @@ extrinsics, rotation = get_extrinsics_parameters(k, H_r)
 print("RT[0] = ", extrinsics[0])
 
 # print(rotation)
-# print(extrinsics)
+print(extrinsics)

@@ -1,283 +1,6 @@
 #include "../include/calibration.hpp"
 
-
-//Getting object point (world coord)
-vector<Point3f> objectPoint(unsigned row, unsigned col, float squarSize)
-{
-	vector<Point3f> objectPoint;
-	objectPoint.reserve(row*col);
-
-	for (unsigned i = 0; i < col; i++)
-	{
-		for (unsigned j = 0; j < row; j++)
-		{
-			objectPoint.push_back({static_cast<float>(j*squarSize), static_cast<float>(i*squarSize), 1.});
-		}
-	}
-
-	return objectPoint;
-}
-
-Mat normalizeImagePoints(vector<vector<Point2f>> &points, int w, int h)
-{
-	float sx = 2. / w;
-	float sy = 2. / h;
-	float x0 = w / 2.;
-	float y0 = h / 2.;
-
-	for (unsigned i = 0; i < points.size(); i++)
-	{
-		for (unsigned j = 0; j < points[i].size(); j++)
-		{
-			points[i][j].x = sx * (points[i][j].x - x0);
-			points[i][j].y = sx * (points[i][j].y - x0);
-		}
-	}
-
-	Mat N = Mat(3, 3, CV_32FC1);
-	N.at<float>(0, 0) = sx;
-	N.at<float>(0, 1) = 0.;
-	N.at<float>(0, 2) = -sx * x0;
-	N.at<float>(1, 0) = 0.;
-	N.at<float>(1, 1) = sy;
-	N.at<float>(1, 2) = -sy * y0;
-	N.at<float>(2, 0) = 0.;
-	N.at<float>(2, 1) = 0.;
-	N.at<float>(2, 2) = 1.;
-	return N;
-}
-
-
-Mat homographyDltSimEtimationImagePoints(vector<Point2f>& vector)
-{
-	//cout << "ESTIMATION IMAGE POINTS" << endl;
-	Mat matrix = Mat::eye(3, 3, CV_32FC1);
-	Point2f center(0, 0);
-	Mat S;
-	for (auto veec : vector)
-	{
-		center += veec;
-	}
-
-	center.x /= vector.size(); // x mean
-	center.y /= vector.size(); // y mean
-
-	float sum = 0;
-
-	for (auto veec : vector)
-	{
-		float tmp = norm(veec - center);
-		sum += tmp;
-		
-
-	}
-
-	center *= -1;
-
-	float scale = sqrt(2.) / (sum / vector.size());
-
-	
-	
-	matrix.row(0).col(0) = scale;
-	matrix.row(1).col(1) = scale;
-	matrix.row(0).col(2) = center.x;
-	matrix.row(1).col(2) = center.y;
-	return matrix;
-
-}
-
-
-Mat homographyDltSimEtimationObjectPoints(vector<Point3f>& vector)
-{
-	//cout << "ESTIMATION OBJECT POINTS" << endl;
-	Mat matrix = Mat::eye(3, 3, CV_32FC1);
-	Point3f center(0, 0, 0);
-	Mat S;
-	for (auto veec : vector)
-	{
-		center += veec;
-	}
-
-	center.x /= vector.size(); // x maen
-	center.y /= vector.size(); // y mean
-
-	float sum = 0;
-
-	for (auto veec :vector)
-	{
-		float tmp = norm(veec - center);
-		sum += tmp;
-	}
-	center *= -1;
-
-	float scale = sqrt(2.) / (sum / vector.size());
-	
-	matrix.row(0).col(0) = scale;
-	matrix.row(1).col(1) = scale;
-	matrix.row(0).col(2) = center.x;
-	matrix.row(1).col(2) = center.y;
-	return matrix;
-	
-}
-
-void homographyDltNormalizeImagePoints(vector<Point2f>& point, Mat& S)
-{
-	//cout << "NORMALIZE IMAGE POINTS" << endl;
-	Mat x = Mat::zeros(3, 1, CV_32FC1), xp = Mat::zeros(3, 1, CV_32FC1);
-	Mat newPoint(3, point.size(), CV_32FC1);
-	for(unsigned i = 0; i < point.size(); i++)
-	{
-		x.at<float>(0, 0) = point[i].x;
-		x.at<float>(1, 0) = point[i].y;
-		x.at<float>(2, 0) = 1.;
-		xp = S * x;
-
-		//TREBA
-		// xp.at<float>(0, 0) = x.dot(S.row(0));
-		// xp.at<float>(1, 0) = x.dot(S.row(1));
-		// xp.at<float>(2, 0) = x.dot(S.row(2));
-		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
-		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
-		//point[i].z = 1;
-	}
-}
-
-void homographyDltNormalizeObjectPoints(vector<Point3f>& point, Mat& S)
-{
-	//cout << "NORMALIZE OBJECT POINTS" << endl;
-	Mat x = Mat::zeros(3, 1, CV_32FC1), xp = Mat::zeros(3, 1, CV_32FC1);
-	for(unsigned i = 0; i < point.size(); i++)
-	{
-		x.at<float>(0, 0) = point[i].x;
-		x.at<float>(1, 0) = point[i].y;
-		x.at<float>(2, 0) = point[i].z;
-
-		xp = S * x;
-
-		//TREBA
-		// xp.at<float>(0, 0) = x.dot(S.row(0));
-		// xp.at<float>(1, 0) = x.dot(S.row(1));
-		// xp.at<float>(2, 0) = x.dot(S.row(2));
-		point[i].x = xp.at<float>(0, 0) / xp.at<float>(2, 0);
-		point[i].y = xp.at<float>(1, 0) / xp.at<float>(2, 0);
-		point[i].z = 1;
-	}
-}
-Mat homographyDlt(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints)
-{
-	//cout << "DLT" << endl;
-	Mat img(3, 3, CV_32FC1), obj(3, 3, CV_32FC1);
-	Mat invTgtS = Mat::eye(3, 3, CV_32FC1);
-	Mat A = Mat::zeros(2*imagePoints.size(), 9, CV_32FC1);
-	Mat H(3, 3, CV_32FC1);
-	//img = homographyDltSimEtimationImagePoints(imagePoints);
-	img = imagePointNomalizationMatrix(imagePoints, invTgtS); // img and imgInv
-	//cout << "img = " << img << endl;
-	//cout << "********************" << endl;
-	//obj = homographyDltSimEtimationObjectPoints(objectPoints);
-	obj = objectPointNomalizationMatrix(objectPoints);
-	//cout << "obj = " << obj << endl;
-	//cout << "********************" << endl;
-
-	
-
-	//invTgtS = obj.inv();
-	//cout << "invTGS = " << invTgtS << endl; // invert img
-
-	homographyDltNormalizeImagePoints(imagePoints, img);
-	homographyDltNormalizeObjectPoints(objectPoints, obj);
-/*
-	for (unsigned i = 0; i < imagePoints.size(); i++)
-	{
-		A.at<float>(i*2 + 0, 0) = -1*imagePoints[i].x;
-		A.at<float>(i*2 + 0, 1) = -1*imagePoints[i].y;
-		A.at<float>(i*2 + 0, 2) = -1.;
-		A.at<float>(i*2 + 0, 3) = 0.;
-		A.at<float>(i*2 + 0, 4) = 0.;
-		A.at<float>(i*2 + 0, 5) = 0.;
-		A.at<float>(i*2 + 0, 6) = imagePoints[i].x * objectPoints[i].x;
-		A.at<float>(i*2 + 0, 7) = imagePoints[i].y * objectPoints[i].x;
-		A.at<float>(i*2 + 0, 8) = objectPoints[i].x;
-
-		A.at<float>(i*2 + 1, 0) = 0.;
-		A.at<float>(i*2 + 1, 1) = 0.;
-		A.at<float>(i*2 + 1, 2) = 0.;
-		A.at<float>(i*2 + 1, 3) = -1*imagePoints[i].x;
-		A.at<float>(i*2 + 1, 4) = -1*imagePoints[i].y;
-		A.at<float>(i*2 + 1, 5) = -1.;
-		A.at<float>(i*2 + 1, 6) = imagePoints[i].x * objectPoints[i].y;
-		A.at<float>(i*2 + 1, 7) = imagePoints[i].y * objectPoints[i].y;
-		A.at<float>(i*2 + 1, 8) = objectPoints[i].y;
-		
-	}
-*/
-
-	for (unsigned i = 0; i < imagePoints.size(); i++)
-		{
-			A.at<float>(i*2 + 0, 0) = -1*objectPoints[i].x;
-			A.at<float>(i*2 + 0, 1) = -1*objectPoints[i].y;
-			A.at<float>(i*2 + 0, 2) = -1.;
-			A.at<float>(i*2 + 0, 3) = 0.;
-			A.at<float>(i*2 + 0, 4) = 0.;
-			A.at<float>(i*2 + 0, 5) = 0.;
-			A.at<float>(i*2 + 0, 6) = objectPoints[i].x * imagePoints[i].x;
-			A.at<float>(i*2 + 0, 7) = objectPoints[i].y * imagePoints[i].x;
-			A.at<float>(i*2 + 0, 8) = imagePoints[i].x;
-
-			A.at<float>(i*2 + 1, 0) = 0.;
-			A.at<float>(i*2 + 1, 1) = 0.;
-			A.at<float>(i*2 + 1, 2) = 0.;
-			A.at<float>(i*2 + 1, 3) = -1*objectPoints[i].x;
-			A.at<float>(i*2 + 1, 4) = -1*objectPoints[i].y;
-			A.at<float>(i*2 + 1, 5) = -1.;
-			A.at<float>(i*2 + 1, 6) = objectPoints[i].x * imagePoints[i].y;
-			A.at<float>(i*2 + 1, 7) = objectPoints[i].y * imagePoints[i].y;
-			A.at<float>(i*2 + 1, 8) = imagePoints[i].y;
-			
-	}
-	//cout << "A = " << A << endl;
-	Mat S, U, VT;
-	
-	SVDecomp(A, U, S, VT);
-	Mat Vtransp;
-	Vtransp = VT.t();
-	//cout << "Vtransp size = " << Vtransp.cols << endl;
-
-	
-	//cout << "h_norm = " << Vtransp.col(Vtransp.cols - 1) << endl;
-	
-	// Mat Vtransp = VT.t();
-	//cout << "Vt = " << Vtransp.col(8) <<  endl;
-	// cout << "Vt transpose = " << Vtransp <<  endl;
-	// cout << "####################3" << endl;
-	
-	
-	// auto HTmp = VT.col(VT.cols - 1);
-	Mat h(3, 3, CV_32FC1);
-	// //cout << "HTmp = " << HTmp << endl;
-
-	h.at<float>(0, 0) = Vtransp.at<float>(0, 8);
-	h.at<float>(0, 1) = Vtransp.at<float>(1, 8);
-	h.at<float>(0, 2) = Vtransp.at<float>(2, 8);
-	h.at<float>(1, 0) = Vtransp.at<float>(3, 8);
-	h.at<float>(1, 1) = Vtransp.at<float>(4, 8);
-	h.at<float>(1, 2) = Vtransp.at<float>(5, 8);
-	h.at<float>(2, 0) = Vtransp.at<float>(6, 8);
-	h.at<float>(2, 1) = Vtransp.at<float>(7, 8);
-	h.at<float>(2, 2) = Vtransp.at<float>(8, 8);
-	//cout << "h = " << h << endl;
-	// cout << VT.row(8) << endl;
-
-	h = invTgtS * h * img;
-	// cout << h << endl;
-	return h;
-
-	
-}
-
-//##############CAMERA MATRIX##################//
-
-Mat V_ij(Mat H, int i, int j)
+Mat V_ij(const Mat H, int i, int j)
 {	
 	Mat v(1, 6, CV_32FC1);
 
@@ -290,7 +13,7 @@ Mat V_ij(Mat H, int i, int j)
 	return v;
 }
 
-Mat getV(vector<Mat> &H)
+Mat getV(const vector<Mat> &H)
 {
 	Mat V(2*H.size(), 6, CV_32FC1);
 
@@ -322,9 +45,7 @@ Mat getV(vector<Mat> &H)
 	
 }
 
-//******************Old calculation******************//
-
-bool intrinsics(Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama)
+bool intrinsics(const Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama)
 {
 	auto d = B.at<float>(0, 0) * B.at<float>(2, 2) - B.at<float>(0, 1) * B.at<float>(0, 1);
 
@@ -356,47 +77,16 @@ bool intrinsics(Mat &B, float &u0, float &v0, float &lam, float &alpha, float &b
 	return true;
 }
 
-//******************New calculation******************//
-/*
-bool intrinsics(Mat &B, float &u0, float &v0, float &lam, float &alpha, float &beta, float &gama)
-{
-
-	float w = B.at<float>(0, 0)*B.at<float>(1, 1)*B.at<float>(2, 2) - B.at<float>(0, 1)*B.at<float>(0, 1)*B.at<float>(2, 2) - B.at<float>(0, 0)*B.at<float>(1, 2)*B.at<float>(1, 2) + 2*B.at<float>(0, 1)*B.at<float>(0, 2)*B.at<float>(1, 2) - B.at<float>(1, 1)*B.at<float>(0, 2)*B.at<float>(0, 2);
-	float d = B.at<float>(0, 0)*B.at<float>(1, 1) - B.at<float>(0, 1)*B.at<float>(0, 1);
-
-	if (d < 0.)
-	{
-		d = 0.01;
-	}
-
-	cout << "d = " << d << endl;
-	cout << "w = " << w << endl;
-	cout << B.at<float>(0, 0) << endl;
-
-	alpha = sqrt(w / (d * B.at<float>(0, 0)));
-	beta = sqrt(w / (d*d)* B.at<float>(0, 0));
-	gama = sqrt(w / (d*d*B.at<float>(0, 0))) * B.at<float>(0, 1);
-	u0 = (B.at<float>(0, 1) * B.at<float>(1, 2) - B.at<float>(1, 1) * B.at<float>(0, 2)) / d;
-	v0 = (B.at<float>(0, 1) * B.at<float>(0, 2) - B.at<float>(0, 0) * B.at<float>(1, 2)) / d;
-	return true;
-
-}
-*/
-Mat getIntrinsicParameters(vector<Mat>& H_r)
+Mat getIntrinsicParameters(const vector<Mat>& H_r)
 {
 	Mat V = getV(H_r);
-	//cout << "V = " << V << endl;
 	Mat U, S, Vt;
 	SVDecomp(V, U, S, Vt);
-	//cout << "Vt = " << Vt << endl;
 
 	Mat VtTransposed = Vt.t();
-	//cout << "Vt transposed = " << VtTransposed << endl;
 	Mat b = VtTransposed.col(VtTransposed.cols - 1);
-	cout << "b = " << b << endl;
 
 	Mat B = Mat::zeros(3, 3, CV_32FC1);
-	//cout << "b = " << b << endl << endl;
 	B.at<float>(0, 0) = b.at<float>(0); // row 1
 	B.at<float>(0, 1) = b.at<float>(1);
 	B.at<float>(0, 2) = b.at<float>(3);
@@ -406,9 +96,6 @@ Mat getIntrinsicParameters(vector<Mat>& H_r)
 	B.at<float>(2, 0) = b.at<float>(3);
 	B.at<float>(2, 1) = b.at<float>(4);
 	B.at<float>(2, 2) = b.at<float>(5);
-
-	cout << "B = " << B << endl;
-
 
 	float u0, v0, alpha, beta, gama, lam;
 
@@ -433,31 +120,16 @@ Mat getIntrinsicParameters(vector<Mat>& H_r)
 	}
 }
 
-/*
-Mat intrinsicsDenormalize(Mat &K, Mat &N)
-{
-	auto N_inv = N.clone();
-	invert(N_inv, N_inv);
-	auto M = N_inv*K;
-	return M;
-}
-*/
-
-Mat getExtrinsicsParameters(Mat &K, Mat &H)
+Mat getExtrinsicsParameters(const Mat &K, const Mat &H)
 {
 	Mat KInv(3, 3, CV_32FC1);
 	KInv = K.inv();
-	cout << "KInv = " << KInv << endl;
 	
 	Mat rt(3, 4, CV_32FC1);
 
 	Mat h1 = H.col(0);
 	Mat h2 = H.col(1);
 	Mat h3 = H.col(2);
-
-	// cout << "h1 = " << h1 << endl << endl;
-	// cout << "h2 = " << h2 << endl << endl;
-	// cout << "h3 = " << h3 << endl << endl;
 
 	Mat r1 = KInv * h1;
 	Mat r2 = KInv * h2;
@@ -467,17 +139,11 @@ Mat getExtrinsicsParameters(Mat &K, Mat &H)
 	float lam3 = (lam1 + lam2) / 2.;
 
 	r1 *= lam1;
-	//cout << "r1 = " << r1 << endl;
 	r2 *= lam2;
 
 	Mat r3 = r1.cross(r2);
-	//cout << "r3 = " << r3 << endl;
 
 	Mat t = (KInv * h3) * lam3;
-	cout << "KInv = " << KInv << endl << endl;
-	cout << "h3 = " << h3 << endl << endl;
-	cout << "lam3 = " << lam3 << endl << endl; 
-	//cout << "t = " << t << endl << endl;
 
 	Mat R(3, 3, CV_32FC1);
 	R.at<float>(0, 0) = r1.at<float>(0);
@@ -493,17 +159,9 @@ Mat getExtrinsicsParameters(Mat &K, Mat &H)
 
 	Mat U, S, Vt;
 	SVD::compute(R, U, S, Vt);
-	cout << "U from extrinsics = " << U << endl << endl;
-	cout << "Vt from extrinsics = " << Vt << endl << endl;
 	R.col(0) = U * Vt.row(0);
 	R.col(1) = U * Vt.row(1);
 	R.col(2) = U * Vt.row(2);
-
-	// Mat tmp1 = U * Vt.row(0);
-	// Mat tmp2 = U * Vt.row(1);
-	// Mat tmp3 = U * Vt.row(2);
-
-	//cout << "tmp1 = " << tmp1 << endl;
 
 	Mat tmp1 = R.col(0);
 	Mat tmp2 = R.col(1);
@@ -525,7 +183,125 @@ Mat getExtrinsicsParameters(Mat &K, Mat &H)
 	return rt;
 }
 /*
-Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &imagePointsNorm, vector<vector<Point2f>> &imageProj, Mat &K)
+float computeReprojectionError(const vector<vector<Point3f>> &objectPoints, const vector<vector<Point2f>> &imagePoints, 
+	const vector<Mat> &rvecs, const vector<Mat> &tvecs, 
+	const Mat &cameraMatrix, const Mat &distCoef, 
+	vector<float> &perViewErrors, bool fisheye)
+{
+	vector<Point2f> imagePoints2;
+	float totalPoints = 0;
+	float totalError = 0;
+	float err;
+	perViewErrors.resize(objectPoints.size());
+
+	for (unsigned i = 0; i < objectPoints.size(); i++)
+	{
+		if (fisheye)
+		{
+			fisheye::projectPoints(objectPoints[i], imagePoints2, rvecs[i], tvecs[i], cameraMatrix, distCoef);
+		} else 
+		{
+			projectPoints(objectPoints[i], rvecs[i], tvecs[i], cameraMatrix, distCoef, imagePoints2);
+		}
+		err = norm(imagePoints[i], imagePoints2, NORM_L2);
+
+		unsigned n = objectPoints.size();
+		perViewErrors[i] = (float)sqrt(err*err / n);
+		totalError += err*err;
+		totalError += n;
+	}
+	return sqrt(totalError / totalPoints);
+}
+*/
+
+/*
+float calc_reprojection(const Mat &A, const Mat &K, const vector<Point3f> &model_pts, const vector<Point2f> &image_pts, vector<Point2f> &image_pts_proj, vector<float> &k) 
+{
+
+	auto m = model_pts.size();
+
+	image_pts_proj = vector<Point2f>(m);
+
+	vector<float> model(4);
+
+	float err = 0.;
+	for(unsigned i = 0; i < m; i++) {
+
+		model[0] = model_pts[i].x;
+		model[1] = model_pts[i].y;
+		model[2] = 0.0;
+		model[3] = 1.0;
+
+		auto proj_ptn = reproject_point(model, A, K, k);
+		image_pts_proj[i].x = proj_ptn[0];
+		image_pts_proj[i].y = proj_ptn[1];
+
+		// calculate projection error
+		auto x_d = image_pts[i].x - proj_ptn[0];
+		auto y_d = image_pts[i].x - proj_ptn[1];
+
+		x_d*=x_d;
+		y_d*=y_d;
+
+		err += sqrt(x_d + y_d);
+	}
+
+	return err / m;
+}
+
+
+vector<float> reproject_point(const vector<float> &world_ptn, const Mat &A, const Mat &K, const vector<float> &k) 
+{
+
+	// auto proj_ptn = K * world_ptn; 
+	// proj_ptn /= proj_ptn[2]; 
+	vector<float> proj_ptn(3);
+	proj_ptn[0] = K.at<float>(0, 0) * world_ptn[0];
+	proj_ptn[1] = K.at<float>(1, 0) * world_ptn[1];
+	proj_ptn[2] = K.at<float>(2, 0) * world_ptn[2];
+
+	proj_ptn[0] = proj_ptn[0] / proj_ptn[2];
+	proj_ptn[1] = proj_ptn[1] / proj_ptn[2];
+	proj_ptn[2] = proj_ptn[2] / proj_ptn[2];
+
+
+	if (k.size() == 2) {
+		float r2 = proj_ptn[0]*proj_ptn[0] + proj_ptn[1]*proj_ptn[1] + 1; 
+		float d_r = (1 + k[0]*r2 + k[1]*(r2*r2)); // radial distortion
+		proj_ptn[0] = proj_ptn[0]*d_r;
+		proj_ptn[1] = proj_ptn[1]*d_r;
+	} else if (k.size() == 4) {
+		float r2 = proj_ptn[0]*proj_ptn[0] + proj_ptn[1]*proj_ptn[1] + 1; 
+		float d_r = (1 + k[0]*r2 + k[1]*(r2*r2)); // radial distortion
+		float d_t = 2 * k[2]*proj_ptn[0]*proj_ptn[1] + k[3]*(r2 + 2*(proj_ptn[0]*proj_ptn[0])); // tan distortion
+		proj_ptn[0] = proj_ptn[0]*d_r+ d_t;
+		proj_ptn[1] = proj_ptn[1]*d_r+ d_t;
+	} else if (k.size() == 8) {
+		float r2 = proj_ptn[0]*proj_ptn[0] + proj_ptn[1]*proj_ptn[1] + 1; 
+		float r3 = proj_ptn[0]*proj_ptn[0]*proj_ptn[0] + proj_ptn[1]*proj_ptn[1]*proj_ptn[1] + 1; 
+		float k_u = 1 + k[0]*r2 + k[1]*(r2*r2) + k[2]*(r3*r3);
+		float k_d = 1 + k[3]*r2 + k[4]*(r2*r2) + k[5]*(r3*r3);
+		float d_r = (k_d) ? k_u / k_d : 0.; // radial distortion
+		float d_t = 2 * k[2]*proj_ptn[0]*proj_ptn[1] + k[3]*(r2 + 2*(proj_ptn[0]*proj_ptn[0])); // tan distortion
+		proj_ptn[0] = proj_ptn[0]*d_r+ d_t;
+		proj_ptn[1] = proj_ptn[1]*d_r+ d_t;
+	}
+
+	//auto pp_vec = A * vector{proj_ptn[0], proj_ptn[1], proj_ptn[2]};
+	vector<float> tmp1;
+
+	tmp1[0] = A.at<float>(0, 0) * proj_ptn[0];
+	tmp1[1] = A.at<float>(1, 0) * proj_ptn[1];
+	tmp1[1] = A.at<float>(2, 0) * proj_ptn[2];
+
+	vector<float> tmp;
+	tmp.push_back(tmp1[0] / tmp1[2]);
+	tmp.push_back( tmp1[1] / tmp1[2]);
+
+	return tmp;
+}*/
+/*
+Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &imagePointsNorm, vector<vector<Point2f>> &imageProj, Mat &A)
 {
 	Mat k(1, 8, CV_64FC1);
 	float u0, v0, ui_uo, vi_vo, xy;
@@ -535,20 +311,14 @@ Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &im
 	Mat D(imagePoints.size()*num*2, 2, CV_64FC1);
 	Mat d(imagePoints.size()*num*2, 1, CV_64FC1);
 
-	u0 = K.at<float>(0, 2);
-	v0 = K.at<float>(1, 2);
-
-	float tmp1, tmp2;
+	u0 = A.at<float>(0, 2);
+	v0 = A.at<float>(1, 2);
 
 	for (unsigned i = 0; i < imagePoints.size(); i++)
 	{
 		for (unsigned j = 0; j < num; j++)
-		{
-			//xy = sum((imagePointsNorm[i][j] * imagePointsNorm[i][j]));
-			tmp1 = imagePointsNorm[i][j].x * imagePointsNorm[i][j].x;
-			tmp2 = imagePointsNorm[i][j].y * imagePointsNorm[i][j].y;
-			xy = tmp1 + tmp2; 
-
+		{ 
+			xy = imagePoints[i][j].x * imagePoints[i][j].y + imagePoints[i][j].y * imagePoints[i][j].y;
 			ui_uo = imageProj[i][j].x - u0;
 			vi_vo = imageProj[i][j].y - v0;
 
@@ -564,7 +334,6 @@ Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &im
 	}
 
 	Mat K = Mat(imagePoints.size()*4, imagePoints.size(), CV_64FC1);
-	//Mat K;
 	solve(D, K, d);
 
 	k.at<float>(0) = K.at<float>(0);
@@ -574,233 +343,47 @@ Mat distortion(vector<vector<Point2f>> &imagePoints, vector<vector<Point2f>> &im
 }
 */
 
-//////////////////////// Normalization again ///////////////////////////////////
-Mat imagePointNomalizationMatrix(vector<Point2f> &imagePoints, Mat &objInv)
+Mat distortion(vector<Point2f> &imagePoints, vector<vector<Point3f>> &objectPoints, Mat &K, vector<Mat> &RT)
 {
-	Mat matrix = Mat::eye(3, 3, CV_32FC1);
-	Point2f center(0, 0);
-	Mat S;
-	for (auto veec : imagePoints)
+	float uc = K.at<float>(0, 2);
+	float vc = K.at<float>(1, 2);
+
+	Mat D(RT.size()*2, 2, CV_32FC1);
+	Mat d(RT.size()*2, 1, CV_32FC1);
+
+	for (unsigned i = 0; i < RT.size(); i++)
 	{
-		center.x += veec.x;
-		center.y += veec.y;
-	}
+		for (unsigned j = 0; j < imagePoints.size(); i++)
+		{
+			Mat homog_model_coords(1, 4, CV_32FC1);
+			homog_model_coords.at<float>(0, 0) = imagePoints[j].x;
+			homog_model_coords.at<float>(0, 0) = imagePoints[j].y;
+			homog_model_coords.at<float>(0, 0) = 0.;
+			homog_model_coords.at<float>(0, 0) = 1.;
 
-	center.x /= imagePoints.size(); // x mean
-	center.y /= imagePoints.size(); // y mean
+			Mat homog_coords = RT[i] * homog_model_coords;
 
-	Point2f sum(0, 0);
+			Mat coords = homog_coords / homog_coords.col(homog_coords.cols - 1);
+			float x = coords.at<float>(0);
+			float y = coords.at<float>(1);
+			float r = sqrt(x*x + y*y);
 
+			Mat P = K * homog_coords;
+			P = P / P.col(2);
+			float u = P.at<float>(0);
+			float v = P.at<float>(1);
 
-	for (auto veec : imagePoints)
-	{
-		//double tmp = norm(veec - center);
-		//sum += tmp;
-		sum.x += (veec.x - center.x) * (veec.x - center.x);
-		sum.y += (veec.y - center.y) * (veec.y - center.y);
-	}
-	//center *= -1;
+			float du = u - uc;
+			float dv = v - vc;
 
-	//float scale_b = sqrt(2.) / (sum / vector.size());
+			D.at<float>(i*2, 0) = du*r*r;
+			D.at<float>(i*2, 1) = du*r*r*r*r;
 
-	Point2f var(0, 0);
-	var.x = sum.x / imagePoints.size(); 
-	var.y = sum.y / imagePoints.size(); 
-	
+			D.at<float>(i*2+1, 0) = dv*r*r;
+			D.at<float>(i*2+1, 1) = dv*r*r*r*r;
 
-	// standard deviation square root of variance
-	Point2f sd(0, 0);
-	sd.x = sqrt(var.x);
-	sd.y = sqrt(var.y);
-
-	float s_x = sqrt(2. / var.x);
-	float s_y = sqrt(2. / var.y);
-
-	
-	matrix.row(0).col(0) = s_x;
-	matrix.row(1).col(1) = s_y;
-	matrix.row(0).col(2) = -s_x*center.x;
-	matrix.row(1).col(2) = -s_y*center.y;
-
-	objInv.row(0).col(0) = 1. / s_x;
-	objInv.row(1).col(1) = 1. / s_y;
-	objInv.row(0).col(2) = center.x;
-	objInv.row(1).col(2) = center.y;
-	return matrix;
-
-}
-
-Mat objectPointNomalizationMatrix(vector<Point3f> &objectPoints)
-{
-	Mat matrix = Mat::eye(3, 3, CV_32FC1);
-	Point3f center(0, 0, 0);
-	Mat S;
-	for (auto veec : objectPoints)
-	{
-		center.x += veec.x;
-		center.y += veec.y;
-	}
-
-	center.x /= objectPoints.size(); // x maen
-	center.y /= objectPoints.size(); // y mean
-
-	Point2f sum(0, 0);
-
-	for (auto veec :objectPoints)
-	{
-		sum.x += (veec.x - center.x) * (veec.x - center.x);
-		sum.y += (veec.y - center.y) * (veec.y - center.y);
-	}
-	//center *= -1;
-
-	Point2f var(0, 0);
-	var.x = sum.x / objectPoints.size(); 
-	var.y = sum.y / objectPoints.size(); 
-
-	float s_x = sqrt(2. / var.x);
-	float s_y = sqrt(2. / var.y);
-
-
-	//float scale = sqrt(2.) / (sum / objectPoints.size());
-	
-	
-	matrix.row(0).col(0) = s_x;
-	matrix.row(1).col(1) = s_y;
-	matrix.row(0).col(2) = -s_x*center.x;
-	matrix.row(1).col(2) = -s_y*center.y;
-
-	
-	return matrix;
-}
-
-
-
-Point2f meanImagePoint(vector<Point2f> &imagePoints)
-{
-	float xMean = 0, yMean = 0;
-	Point2f mean;
-
-	for (unsigned i = 0; i < imagePoints.size(); i++)
-	{
-		xMean += imagePoints[i].x;
-		yMean += imagePoints[i].y;
-	}
-
-	xMean /= imagePoints.size();
-	yMean /= imagePoints.size();
-	mean.x = xMean;
-	mean.y = yMean;
-	return mean;
-
-}
-
-Point2f meanObjectPoint(vector<Point3f> &objectPoints)
-{
-	float xMean = 0, yMean = 0;
-	Point2f mean;
-
-	for (unsigned i = 0; i < objectPoints.size(); i++)
-	{
-		xMean += objectPoints[i].x;
-		yMean += objectPoints[i].y;
-	}
-
-	xMean /= objectPoints.size();
-	yMean /= objectPoints.size();
-	mean.x = xMean;
-	mean.y = yMean;
-	return mean;
-}
-
-Point2f varianceImagePoints(vector<Point2f> &imagePoints, float xMean, float yMean)
-{
-	Point2f var(0, 0);
-	for (unsigned i = 0; i < imagePoints.size(); i++)
-	{
-		var.x += (imagePoints[i].x - xMean) * (imagePoints[i].x - xMean);
-		var.y += (imagePoints[i].y - yMean) * (imagePoints[i].y - yMean);
-	}
-
-	var.x /= imagePoints.size();
-	var.y /= imagePoints.size();
-	return var;
-}
-
-Point2f varianceObjectPoints(vector<Point3f> &objectPoints, float xMean, float yMean)
-{
-	Point2f var(0, 0);
-	for (unsigned i = 0; i < objectPoints.size(); i++)
-	{
-		var.x += (objectPoints[i].x - xMean) * (objectPoints[i].x - xMean);
-		var.y += (objectPoints[i].y - yMean) * (objectPoints[i].y - yMean);
-	}
-
-	var.x /= objectPoints.size();
-	var.y /= objectPoints.size();
-	return var;
-}
-/*
-Mat homographyLeastSquares(vector<Point2f> &imagePoints, vector<Point3f> &objectPoints)
-{
-	Mat A, B, H;
-	Mat h(3, 3, CV_32FC1);
-	pack_ab(imagePoints, objectPoints, A, B);
-
-	Mat _H(8, 1, CV_32FC1);
-
-	Mat At = A.t();
-
-	solve(At*A, At*B, _H);
-
-	// H.create(1, 9);
-	// copy(_H.begin(), _H.end(), H.begin());
-
-	h.at<float>(0, 0) = _H.at<float>(0, 0);
-	h.at<float>(0, 1) = _H.at<float>(0, 1);
-	h.at<float>(0, 2) = _H.at<float>(0, 2);
-	h.at<float>(1, 0) = _H.at<float>(0, 3);
-	h.at<float>(1, 1) = _H.at<float>(0, 4);
-	h.at<float>(1, 2) = _H.at<float>(0, 5);
-	h.at<float>(2, 0) = _H.at<float>(0, 6);
-	h.at<float>(2, 1) = _H.at<float>(0, 7);
-	h.at<float>(2, 2) = _H.at<float>(0, 8);
-
-	return h;
-	
-	
-}
-
-void pack_ab(vector<Point2f> &src_pts, vector<Point3f> &tgt_pts, Mat &A, Mat &B) {
-
-	// construct matrices
-	A = Mat::zeros(src_pts.size() * 2, 8, CV_32FC1);
-	B.create(src_pts.size() * 2, 1, CV_32FC1);
-
-	// populate matrices with data.
-	for (unsigned i = 0; i < src_pts.size(); i++) {
-
-		auto &src = src_pts[i];
-		auto &tgt = tgt_pts[i];
-
-		B.at<float>(i * 2, 0) = tgt.x;
-		B.at<float>(i * 2 + 1, 0) = tgt.y;
-
-		A.at<float>(i * 2, 0) = src.x;
-		A.at<float>(i * 2, 1) = src.y;
-		A.at<float>(i * 2, 2) = 1;
-		A.at<float>(i * 2 + 1, 3) = src.x;
-		A.at<float>(i * 2 + 1, 4) = src.y;
-		A.at<float>(i * 2 + 1, 5) = 1;
-
-		A.at<float>(i * 2, 6) = -1 * src.x * tgt.x;
-		A.at<float>(i * 2, 7) = -1 * src.y * tgt.x;
-		A.at<float>(i * 2 + 1, 6) = -1 * src.x * tgt.y;
-		A.at<float>(i * 2 + 1, 7) = -1 * src.y * tgt.y;
+			d.at<float>(i*2, 0) = objectPoints[i][j].x - u;
+			d.at<float>(i*2+1, 0) = objectPoints[i][j].y - v;
+		}
 	}
 }
-	
-*/
-	 
-
-
-
