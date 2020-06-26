@@ -11,7 +11,7 @@ bool readImages(vector<vector<Point2f>> &imagePoints, vector<vector<Point3f>> &m
 	vector<Point2f> corners;
 	vector<Point3f> object;
 	bool patternfound;
-	int cnt = 0;
+	bool cnt = 0;
 	
 	for (int i = 1; i < 13; i++)
 	{
@@ -22,14 +22,18 @@ bool readImages(vector<vector<Point2f>> &imagePoints, vector<vector<Point3f>> &m
 		if (patternfound)
 		{
 			cnt++;
-			cout << "Corners found!" << endl;
+			cout << "Image - " << readPathImages << to_string(i) << ".png => " << "Corners found!" << endl; 
 			object = objectPoint(9, 6, 1.);
 			imagePoints.push_back(corners);
 			modelPoints.push_back(object);
+		} else
+		{
+			cout << "Image - " << readPathImages << to_string(i) << ".png => " << "Corners not found!" << endl; 
 		}
+		
 	}
-	cout << cnt << " images read..." << endl;
-	if (cnt != 12)
+
+	if (cnt == 0)
 	{
 		return false;
 	}

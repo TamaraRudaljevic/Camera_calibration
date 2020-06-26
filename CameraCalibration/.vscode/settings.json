@@ -9,7 +9,10 @@
         "iosfwd": "cpp",
         "cmath": "cpp",
         "string_view": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "array": "cpp",
+        "initializer_list": "cpp",
+        "utility": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

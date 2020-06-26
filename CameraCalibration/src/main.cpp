@@ -1,12 +1,7 @@
-#include <iostream>
-#include <opencv2/highgui.hpp>
-#include <vector>
 #include "../include/calibration.hpp"
 #include "../include/readData.hpp"
 #include "../include/homography.hpp"
 
-using namespace std;
-using namespace cv;
 
 //string readPath = "/home/tamarar/Desktop/Novo/Camera_calibration/CamaearCalibration/ground_truth/";
 /*
@@ -30,18 +25,28 @@ int main(int argc, char *argv[])
 	cout << "********************************" << endl;
 	vector<vector<Point2f>> imagePoints;
 	vector<vector<Point3f>> objectPoints;
+	vector<vector<Point2f>> imagePointProj;
+	vector<vector<Point3f>> objectPointProj;
 	int width = 0, height = 0;
 
-	//*******************Reading images**********************//
+	/*#######################################################
+	*******************Reading images**********************
+	#######################################################*/
 	if (!readImages(imagePoints, objectPoints, width, height))
 	{
 		cout << "Error reading images..." << endl;
+		cout << "No images..." << endl;
 		return EXIT_FAILURE;
 	}
-	
-	auto imagePointsOriginal = imagePoints;
 
-	//*******************Calculating homography**************//
+	
+	imagePointProj = imagePoints;
+	objectPointProj = objectPoints;
+
+	
+	/*#######################################################
+	*****************Homography calculation******************
+	#######################################################*/
 	int imagePointCnt = imagePoints.size();
 
 	vector<Mat> H;
@@ -54,14 +59,19 @@ int main(int argc, char *argv[])
 	}
 
 
-	//******************Camera matix***************************//
+	/*#######################################################
+	**********************Camera matrix**********************
+	#######################################################*/
+	cout << "********************************" << endl;
 	Mat K = getIntrinsicParameters(H);
 
-	cout << "**Intrinsic parameters**" << endl << "K = " << K << endl;
+	cout << "**Intrinsic parameters**" << endl << endl << "K = " << K << endl;
 
 
 	
-	//*******************Extrinsic parameters*****************//
+	/*#######################################################
+	*******************Extrinsic parameters******************
+	#######################################################*/
 	Mat rt;
 	vector<Mat> RT;
 
@@ -70,19 +80,27 @@ int main(int argc, char *argv[])
 	for (unsigned i = 0; i < H.size(); i++)
 	{
 		rt = getExtrinsicsParameters(K, H[i]);
-		//auto err = calc_reprojection(K, rt, objectPoints[i], imagePointsOriginal[i], imagePoitsProj[i]);
-		cout << "rt = " << rt << endl;
+		//cout << "rt = " << rt << endl;
 		RT.push_back(rt);
 	}
 
 
-	//*******************Lens distortion***********************//
+	/*#######################################################
+	*******************Error calculation********************
+	#######################################################*/
+	cout << "********************************" << endl;
+	cout << "***Reprojection error***" << endl << endl;
 
-	for (unsigned i = 0; i < imagePoints.size(); i++)
+	float err;
+	for (unsigned i = 0; i < H.size(); i++)
 	{
-		Mat k = distortion(imagePoints[i], objectPoints, K, RT);
+		err = reprojError(imagePointProj[i], objectPointProj[i], H[i]);
+		cout << "Image " << i << "., error - " << err << endl;
 	}
-	
+
+
+	//lensDistortion(K, RT, imagePoints, objectPoints);
+
 
 	// //****************CALIBRATE OPENCV****************//
 

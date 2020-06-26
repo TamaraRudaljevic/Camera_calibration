@@ -45,7 +45,7 @@ def getChessboardCorners(images = None):
                 #print("\n")
                 object_points.append(objp[:,:-1]) 
                 #print(object_points)
-                print("size = ", len(object_points))
+                #print("size = ", len(object_points))
                 correspondences.append([corners.astype(np.int), objp[:, :-1].astype(np.int)])
         else:
             print ("Error in detection points", ctr)
@@ -115,7 +115,7 @@ def normalize_points(chessboard_correspondences):
     return ret_correspondences
 
 #########################################################################
-def compute_view_based_homography(correspondence, reproj = False):
+def compute_view_based_homography(correspondence, reproj = True):
     #print(correspondence)
     image_points = correspondence[0]
     #print(image_points)
@@ -161,8 +161,8 @@ def compute_view_based_homography(correspondence, reproj = False):
 
 
     h_norm = vh[np.argmin(s)]
-    print("h_norm = ", h_norm)
-    print("\n")
+    #print("h_norm = ", h_norm)
+    #print("\n")
     #print(np.argmin(s))
     h_norm = h_norm.reshape(3, 3)
 
@@ -179,10 +179,14 @@ def compute_view_based_homography(correspondence, reproj = False):
         reproj_error = 0
         for i in range(len(image_points)):
             t1 = np.array([[object_points[i][0]], [object_points[i][1]], [1.0]])
+            #print("t1 = ", t1)
             t = np.matmul(h, t1).reshape(1, 3)
+            #print("h = ", h)
+            print("t = ", t)
             t = t/t[0][-1]
+            #print("New t = ", t)
             formatstring = "Imp {0} | ObjP {1} | Tx {2}".format(image_points[i], object_points[i], t)
-            #print(formatstring)
+            print(formatstring)
             reproj_error += np.sum(np.abs(image_points[i] - t[0][:-1]))
         reproj_error = np.sqrt(reproj_error/N)/100.0
         print("Reprojection error : ", reproj_error)
@@ -367,12 +371,12 @@ def extrinsicsCalculation(intrinsic, H_r):
     r2 = lam_r2 * np.dot(intrinsicsInv, h2)
     r3 = np.cross(r1, r2, axis=0)
     t = np.array(lam_r3 * np.dot(intrinsicsInv, h3)).transpose()
-    print("lam_r3 = ", lam_r3)
-    print("\n")
-    print("intrinsicsInv = ", intrinsicsInv)
-    print("\n")
-    print("h3 = ", h3)
-    print("\n")
+    #print("lam_r3 = ", lam_r3)
+    #print("\n")
+    #print("intrinsicsInv = ", intrinsicsInv)
+    #print("\n")
+    #print("h3 = ", h3)
+    #print("\n")
 
     #print("t = " , t)
 
@@ -434,7 +438,7 @@ chessboard_correspondences_normalized = normalize_points(chessboard_corresponden
 
 H = []
 for correspondence in chessboard_correspondences_normalized:
-    H.append(compute_view_based_homography(correspondence, reproj=0))
+    H.append(compute_view_based_homography(correspondence, reproj=1))
 
 # for i in range (len(H)):
     #print("H = ", H[i])
