@@ -3,17 +3,18 @@
 #include "../include/homography.hpp"
 
 Size patternsize(9,6);
-string readPathImages = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/";
+string readPathImages = "/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/3/";
 
 bool readImages(vector<vector<Point2f>> &imagePoints, vector<vector<Point3f>> &modelPoints, int &width, int &height)
 {
 	cout << "Reading data..." << endl;
+	cout << "Third folder" << endl;
 	vector<Point2f> corners;
 	vector<Point3f> object;
 	bool patternfound;
 	bool cnt = 0;
 	
-	for (int i = 1; i < 13; i++)
+	for (int i = 1; i < 4; i++)
 	{
 		Mat image = imread(readPathImages + to_string(i) + ".png");
 		width = image.size().width;

@@ -2,23 +2,6 @@
 #include "../include/readData.hpp"
 #include "../include/homography.hpp"
 
-
-//string readPath = "/home/tamarar/Desktop/Novo/Camera_calibration/CamaearCalibration/ground_truth/";
-/*
-void calibrateOpenCV(vector<vector<Point3f>> &modelPoints, vector<vector<Point2f>> &imagePointNorm, Mat &K, Mat &D)
-{
-	int w = 0, h = 0;
-	readImages(readPathImages, imagePointNorm, modelPoints, w, h);
-
-	for (unsigned i = 0; i < imagePointNorm.size(); i++)
-	{
-		cout << imagePointNorm[i] << endl;
-	}
-    Mat image = imread("/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/1.png");
-    vector<Mat> rvecs, tvecs;
-    bool ret = calibrateCamera(modelPoints, imagePointNorm, image.size(), K, D, rvecs, tvecs, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
-}
-*/
 int main(int argc, char *argv[])
 {
 
@@ -32,6 +15,7 @@ int main(int argc, char *argv[])
 	/*#######################################################
 	*******************Reading images**********************
 	#######################################################*/
+
 	if (!readImages(imagePoints, objectPoints, width, height))
 	{
 		cout << "Error reading images..." << endl;
@@ -91,28 +75,18 @@ int main(int argc, char *argv[])
 	cout << "********************************" << endl;
 	cout << "***Reprojection error***" << endl << endl;
 
-	float err;
+	float err = 0;
+	float meanErr = 0;
+
 	for (unsigned i = 0; i < H.size(); i++)
 	{
 		err = reprojError(imagePointProj[i], objectPointProj[i], H[i]);
 		cout << "Image " << i << "., error - " << err << endl;
+		meanErr += err;
 	}
 
-
-	//lensDistortion(K, RT, imagePoints, objectPoints);
-
-
-	// //****************CALIBRATE OPENCV****************//
-
-	// vector<vector<Point3f>> modelOpenCV;
-	// vector<vector<Point2f>> imageOpenCV;
-	// Mat KOpenCv(3, 3, CV_32FC1), DOpenCv;
-
-
-	// calibrateOpenCV(modelOpenCV, imageOpenCV, KOpenCv, DOpenCv);
-
-	//cout << "K OpenCv = " << KOpenCv << endl;
-	
+	meanErr /= 3;
+	cout << "Mean error, third folder, 3 images = " << meanErr << endl;
 
 
 	return 0;

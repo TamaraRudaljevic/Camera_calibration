@@ -18,10 +18,10 @@ imgpoints = [] # 2d points in image plane.
 # # pathlib.Path(path).mkdir(parents=True, exist_ok=True) 
 
 found = 0
-for img in range(1,12+1):  # Here, 10 can be changed to whatever number you like to choose
+for img in range(1,5+1):  # Here, 10 can be changed to whatever number you like to choose
     #readpath = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
     #readpath = '/home/tamarar/Desktop/novo/Camera_calibration/calibration/newCalibrationImages/Pic_'
-    readpath = '/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/2/'
+    readpath = '/home/tamarar/Desktop/Novo/Camera_calibration/CameraCalibration/imagesCalib/3/'
     image=cv2.imread(readpath + str(img) + '.png')
     #print(images[im_i])
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
